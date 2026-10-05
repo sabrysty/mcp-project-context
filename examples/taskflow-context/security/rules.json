@@ -1,0 +1,39 @@
+[
+  {
+    "id": "no-eval",
+    "severity": "error",
+    "pattern": "\\beval\\s*\\(",
+    "message": "Usage de eval() interdit",
+    "fix": "Utiliser JSON.parse ou une logique explicite"
+  },
+  {
+    "id": "no-hardcoded-secret",
+    "severity": "error",
+    "pattern": "(api[_-]?key|secret|password|token)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]",
+    "flags": "i",
+    "message": "Secret potentiellement codé en dur",
+    "fix": "Passer par une variable d'environnement (ConfigService)"
+  },
+  {
+    "id": "no-sql-concat",
+    "severity": "error",
+    "pattern": "(SELECT|INSERT|UPDATE|DELETE)[^;]*['\"]\\s*\\+",
+    "flags": "i",
+    "message": "Requête SQL construite par concaténation (risque d'injection)",
+    "fix": "Utiliser des requêtes paramétrées ou l'ORM"
+  },
+  {
+    "id": "no-console-log",
+    "severity": "warning",
+    "pattern": "console\\.log\\(",
+    "message": "console.log interdit en production",
+    "fix": "Utiliser le Logger de NestJS"
+  },
+  {
+    "id": "no-dangerously-set-html",
+    "severity": "warning",
+    "pattern": "dangerouslySetInnerHTML",
+    "message": "Risque XSS",
+    "fix": "Assainir le HTML (DOMPurify) ou éviter cette API"
+  }
+]
