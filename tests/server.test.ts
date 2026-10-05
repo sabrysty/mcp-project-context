@@ -1,95 +1,73 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+import { SERVER_NAME } from '../src/server.js';
 import {
-  InMemoryTransport,
-  LATEST_PROTOCOL_VERSION,
-  type JSONRPCMessage,
-  type McpServer,
-} from '@modelcontextprotocol/server';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-
-import { createLogger } from '../src/logger.js';
-import { createServer, SERVER_NAME } from '../src/server.js';
-
-/**
- * Minimal JSON-RPC client over an in-memory transport: it exercises the real
- * protocol path (validation, routing, serialization) without spawning a process.
- */
-class TestClient {
-  private nextId = 1;
-  private readonly pending = new Map<number, (message: JSONRPCMessage) => void>();
-
-  constructor(private readonly transport: InMemoryTransport) {
-    transport.onmessage = (message) => {
-      if ('id' in message && typeof message.id === 'number') {
-        this.pending.get(message.id)?.(message);
-        this.pending.delete(message.id);
-      }
-    };
-  }
-
-  async request(method: string, params: Record<string, unknown> = {}): Promise<JSONRPCMessage> {
-    const id = this.nextId++;
-    const response = new Promise<JSONRPCMessage>((resolve) => this.pending.set(id, resolve));
-    await this.transport.send({ jsonrpc: '2.0', id, method, params });
-    return response;
-  }
-
-  async notify(method: string): Promise<void> {
-    await this.transport.send({ jsonrpc: '2.0', method });
-  }
-
-  initialize(): Promise<JSONRPCMessage> {
-    return this.request('initialize', {
-      protocolVersion: LATEST_PROTOCOL_VERSION,
-      capabilities: {},
-      clientInfo: { name: 'test-client', version: '1.0.0' },
-    });
-  }
-}
-
-async function connectTestClient(server: McpServer): Promise<TestClient> {
-  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  await server.connect(serverTransport);
-  await clientTransport.start();
-  return new TestClient(clientTransport);
-}
+  DEMO_CONTEXT_DIR,
+  startTestServer,
+  textOf,
+  type TestServer,
+} from './helpers/mcp-client.js';
 
 describe('createServer', () => {
-  let server: McpServer;
-  let client: TestClient;
-  let initializeResponse: JSONRPCMessage;
+  let test: TestServer;
 
-  beforeEach(async () => {
-    server = createServer({
-      config: { contextDir: process.cwd(), logLevel: 'error' },
-      logger: createLogger('error', () => undefined),
-    });
-    client = await connectTestClient(server);
-    initializeResponse = await client.initialize();
-    await client.notify('notifications/initialized');
+  beforeAll(async () => {
+    test = await startTestServer(DEMO_CONTEXT_DIR);
   });
 
-  afterEach(async () => {
-    await server.close();
+  afterAll(async () => {
+    await test.server.close();
   });
 
   it('identifies itself during initialization', () => {
-    expect(initializeResponse).toMatchObject({ result: { serverInfo: { name: SERVER_NAME } } });
+    expect(test.initializeResponse).toMatchObject({
+      result: { serverInfo: { name: SERVER_NAME } },
+    });
   });
 
-  it('lists the ping tool as read-only', async () => {
-    const response = await client.request('tools/list');
+  it('registers every tool as read-only, with a description', async () => {
+    const tools = await test.client.listTools();
 
-    expect(response).toMatchObject({
-      result: { tools: [{ name: 'ping', annotations: { readOnlyHint: true } }] },
+    expect(tools.map((tool) => tool.name)).toEqual([
+      'ping',
+      'get_project_context',
+      'list_features',
+      'get_feature_doc',
+      'get_conventions',
+    ]);
+    for (const tool of tools) {
+      expect(tool.description?.length).toBeGreaterThan(50);
+      expect(tool.annotations).toMatchObject({ readOnlyHint: true, openWorldHint: false });
+    }
+  });
+
+  it('advertises bounded input schemas', async () => {
+    const tools = await test.client.listTools();
+    const inputOf = (name: string) => tools.find((tool) => tool.name === name)?.inputSchema;
+
+    expect(inputOf('get_feature_doc')).toMatchObject({
+      properties: { name: { type: 'string', minLength: 1, maxLength: 200 } },
+      required: ['name'],
+    });
+    expect(inputOf('get_conventions')).toMatchObject({
+      properties: { topic: { type: 'string', maxLength: 200 } },
+    });
+    expect(inputOf('get_conventions')).not.toHaveProperty('required');
+  });
+
+  it('advertises the output schema of list_features', async () => {
+    const tools = await test.client.listTools();
+
+    expect(tools.find((tool) => tool.name === 'list_features')?.outputSchema).toMatchObject({
+      type: 'object',
+      required: ['features', 'skipped'],
     });
   });
 
   it('answers pong to a ping call', async () => {
-    const response = await client.request('tools/call', { name: 'ping', arguments: {} });
+    const result = await test.client.callTool('ping');
 
-    expect(response).toMatchObject({
-      result: { content: [{ type: 'text', text: 'pong' }] },
-    });
-    expect(response).not.toHaveProperty('result.isError', true);
+    expect(textOf(result)).toBe('pong');
+    expect(result.isError).toBeUndefined();
   });
 });

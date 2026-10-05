@@ -1,5 +1,7 @@
 import type { CallToolResult, McpServer } from '@modelcontextprotocol/server';
 
+import { READ_ONLY_ANNOTATIONS } from './tool-helpers.js';
+
 export const PING_TOOL_NAME = 'ping';
 
 export function handlePing(): CallToolResult {
@@ -13,7 +15,7 @@ export function registerPingTool(server: McpServer): void {
       title: 'Ping',
       description:
         'Health check. Call it to verify that the project-context server is reachable. Returns the text "pong" and has no side effects.',
-      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     () => handlePing(),
   );
