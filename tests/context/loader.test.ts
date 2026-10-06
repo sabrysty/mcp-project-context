@@ -237,6 +237,18 @@ describe('ContextLoader', () => {
 
       await expect(smallLoader.listDocuments()).rejects.toThrow(ContextTooLargeError);
     });
+
+    it('stops when the documents exceed the total size budget', async () => {
+      const smallBudget = new ContextLoader({
+        rootDir: root,
+        maxFileSizeBytes: 2048,
+        maxTotalBytes: 50,
+      });
+
+      await expect(smallBudget.listDocuments()).rejects.toThrow(
+        'The context folder holds more than 50 bytes of Markdown',
+      );
+    });
   });
 });
 

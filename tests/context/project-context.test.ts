@@ -1,9 +1,24 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { ContextNotFoundError, PathTraversalError } from '../../src/context/errors.js';
+import {
+  ContextNotFoundError,
+  InvalidQueryError,
+  PathTraversalError,
+} from '../../src/context/errors.js';
 import { ContextLoader } from '../../src/context/loader.js';
-import { ProjectContext } from '../../src/context/project-context.js';
+import { locateDocument, ProjectContext } from '../../src/context/project-context.js';
 import { createFixtureDir, removeFixtureDir } from '../helpers/fixture-dir.js';
+
+describe('locateDocument', () => {
+  it.each([
+    ['project.md', { kind: 'project' }],
+    ['features/billing/invoices.md', { kind: 'feature', name: 'billing/invoices' }],
+    ['conventions/react.md', { kind: 'convention', topic: 'react' }],
+    ['security/guidelines.md', { kind: 'other' }],
+  ])('%s', (path, expected) => {
+    expect(locateDocument(path)).toEqual(expected);
+  });
+});
 
 describe('ProjectContext', () => {
   let root: string;
@@ -13,7 +28,7 @@ describe('ProjectContext', () => {
     root = await createFixtureDir({
       'project.md': '# My project',
       'features/authentication.md': '# Authentication',
-      'features/billing/invoices.md': '# Invoices',
+      'features/billing/invoices.md': '# Invoices\n\nInvoices are sent every month.',
       'conventions/react.md': '# React',
     });
     context = new ProjectContext(new ContextLoader({ rootDir: root }));
@@ -55,6 +70,18 @@ describe('ProjectContext', () => {
 
   it('refuses a name that leaves its collection', async () => {
     await expect(context.getFeature('../project')).rejects.toThrow(PathTraversalError);
+  });
+
+  it('searches every document and returns the searched stems', async () => {
+    const outcome = await context.search('invoices', 5);
+
+    expect(outcome.terms).toEqual(['invoic']);
+    expect(outcome.results.map((result) => result.path)).toEqual(['features/billing/invoices.md']);
+    expect(outcome.skipped).toEqual([]);
+  });
+
+  it('rejects a query with nothing to search', async () => {
+    await expect(context.search('the', 5)).rejects.toThrow(InvalidQueryError);
   });
 
   it('returns empty collections when the folders do not exist', async () => {

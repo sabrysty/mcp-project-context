@@ -1,4 +1,5 @@
 import type { ContextDocument, ContextLoader, SkippedFile } from './loader.js';
+import { parseQuery, searchDocuments, type SearchResult } from './search.js';
 
 export const PROJECT_FILE = 'project.md';
 export const FEATURES_FOLDER = 'features';
@@ -15,6 +16,20 @@ export interface Collection {
   entries: NamedDocument[];
   skipped: SkippedFile[];
 }
+
+export interface SearchOutcome {
+  /** Words actually searched, once common words are removed. */
+  terms: string[];
+  results: SearchResult[];
+  skipped: SkippedFile[];
+}
+
+/** Which part of the context a document belongs to. */
+export type DocumentLocation =
+  | { kind: 'project' }
+  | { kind: 'feature'; name: string }
+  | { kind: 'convention'; topic: string }
+  | { kind: 'other' };
 
 /** Knows where each part of the context lives (layout of PROJECT_CONTEXT.md §5.1). */
 export class ProjectContext {
@@ -40,11 +55,19 @@ export class ProjectContext {
     return this.getEntry(CONVENTIONS_FOLDER, topic);
   }
 
+  /** Full-text search across every Markdown document of the context. */
+  async search(query: string, limit: number): Promise<SearchOutcome> {
+    // Parsed first: a query with nothing to search should not cost a read of the whole folder.
+    const terms = parseQuery(query);
+    const { documents, skipped } = await this.loader.listDocuments();
+    return { terms, results: searchDocuments(documents, terms, limit), skipped };
+  }
+
   private async listCollection(folder: string): Promise<Collection> {
     const { documents, skipped } = await this.loader.listDocuments(folder);
     return {
       entries: documents.map((document) => ({
-        name: stripMarkdownExtension(document.path.slice(folder.length + 1)),
+        name: entryName(folder, document.path),
         document,
       })),
       skipped,
@@ -55,6 +78,22 @@ export class ProjectContext {
     // Agents often pass the file name: "authentication.md" is understood as "authentication".
     return this.loader.loadDocument(`${folder}/${stripMarkdownExtension(name)}.md`);
   }
+}
+
+/** Tells which part of the context the document at `path` belongs to. */
+export function locateDocument(path: string): DocumentLocation {
+  if (path === PROJECT_FILE) return { kind: 'project' };
+  if (path.startsWith(`${FEATURES_FOLDER}/`)) {
+    return { kind: 'feature', name: entryName(FEATURES_FOLDER, path) };
+  }
+  if (path.startsWith(`${CONVENTIONS_FOLDER}/`)) {
+    return { kind: 'convention', topic: entryName(CONVENTIONS_FOLDER, path) };
+  }
+  return { kind: 'other' };
+}
+
+function entryName(folder: string, path: string): string {
+  return stripMarkdownExtension(path.slice(folder.length + 1));
 }
 
 function stripMarkdownExtension(name: string): string {

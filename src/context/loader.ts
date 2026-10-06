@@ -16,6 +16,10 @@ import { isSafePathSegment, resolveInsideRoot } from './safe-path.js';
 
 export const DEFAULT_MAX_FILE_SIZE_BYTES = 1024 * 1024;
 export const DEFAULT_MAX_DOCUMENTS = 500;
+export const DEFAULT_MAX_TOTAL_BYTES = 10 * 1024 * 1024;
+
+// Files read at the same time by a listing: reading 200 files one by one was 4× slower.
+const LOAD_CONCURRENCY = 16;
 
 const RULES_FILE_NAME = 'rules.json';
 // Some Windows editors start UTF-8 files with this invisible character.
@@ -51,6 +55,8 @@ export interface ContextLoaderOptions {
   rootDir: string;
   maxFileSizeBytes?: number;
   maxDocuments?: number;
+  /** Total size of the documents a single listing may load (it bounds search time and memory). */
+  maxTotalBytes?: number;
 }
 
 const frontMatterSchema = z.object({
@@ -78,11 +84,13 @@ export class ContextLoader {
   private readonly rootDir: string;
   private readonly maxFileSizeBytes: number;
   private readonly maxDocuments: number;
+  private readonly maxTotalBytes: number;
 
   constructor(options: ContextLoaderOptions) {
     this.rootDir = path.resolve(options.rootDir);
     this.maxFileSizeBytes = options.maxFileSizeBytes ?? DEFAULT_MAX_FILE_SIZE_BYTES;
     this.maxDocuments = options.maxDocuments ?? DEFAULT_MAX_DOCUMENTS;
+    this.maxTotalBytes = options.maxTotalBytes ?? DEFAULT_MAX_TOTAL_BYTES;
   }
 
   /** Reads a Markdown file or a `rules.json` file of the context folder as text. */
@@ -136,20 +144,30 @@ export class ContextLoader {
       throw new ContextNotFoundError(`Not a folder: ${directory}`);
     }
 
-    await this.collectDocuments(directory, absoluteDirectory, listing);
+    const paths = await this.findMarkdownFiles(directory, absoluteDirectory, listing.skipped);
+    // Counted before reading anything: a folder chosen by mistake fails fast.
+    if (paths.length > this.maxDocuments) {
+      throw new ContextTooLargeError(
+        `The context folder holds more than ${String(this.maxDocuments)} Markdown files`,
+      );
+    }
+    await this.loadAll(paths, listing);
+
     listing.documents.sort(byPath);
     listing.skipped.sort(byPath);
     return listing;
   }
 
-  private async collectDocuments(
+  /** Walks `directory` recursively and returns the paths of its Markdown files. */
+  private async findMarkdownFiles(
     directory: string,
     absoluteDirectory: string,
-    listing: DocumentListing,
-  ): Promise<void> {
+    skipped: SkippedFile[],
+  ): Promise<string[]> {
     // withFileTypes describes the entries themselves: a symbolic link to a folder is not a
     // directory here, so the walk never follows links (no escape, no infinite loop).
     const entries = await readdir(absoluteDirectory, { withFileTypes: true });
+    const files: string[] = [];
 
     for (const entry of entries) {
       // Hidden entries (.git, .env, .DS_Store…) are never part of the context.
@@ -158,34 +176,49 @@ export class ContextLoader {
       const relativePath = directory === '' ? entry.name : `${directory}/${entry.name}`;
       if (entry.isDirectory()) {
         if (isSafePathSegment(entry.name)) {
-          await this.collectDocuments(
-            relativePath,
-            path.join(absoluteDirectory, entry.name),
-            listing,
-          );
+          const absolutePath = path.join(absoluteDirectory, entry.name);
+          files.push(...(await this.findMarkdownFiles(relativePath, absolutePath, skipped)));
         } else {
-          listing.skipped.push({
-            path: relativePath,
-            reason: 'Unsupported characters in folder name',
-          });
+          skipped.push({ path: relativePath, reason: 'Unsupported characters in folder name' });
         }
       } else if (isMarkdownFile(entry.name)) {
-        await this.collectDocument(relativePath, listing);
+        files.push(relativePath);
+      }
+    }
+    return files;
+  }
+
+  /** Loads documents by batches read in parallel, within the total size budget. */
+  private async loadAll(paths: readonly string[], listing: DocumentListing): Promise<void> {
+    let totalBytes = 0;
+
+    for (let start = 0; start < paths.length; start += LOAD_CONCURRENCY) {
+      const batch = paths.slice(start, start + LOAD_CONCURRENCY);
+      const outcomes = await Promise.all(batch.map((file) => this.tryLoadDocument(file)));
+
+      for (const outcome of outcomes) {
+        if ('reason' in outcome) {
+          listing.skipped.push(outcome);
+        } else {
+          listing.documents.push(outcome);
+          totalBytes += Buffer.byteLength(outcome.content);
+        }
+      }
+      if (totalBytes > this.maxTotalBytes) {
+        throw new ContextTooLargeError(
+          `The context folder holds more than ${formatSize(this.maxTotalBytes)} of Markdown: ` +
+            'point the server to a smaller folder',
+        );
       }
     }
   }
 
-  private async collectDocument(relativePath: string, listing: DocumentListing): Promise<void> {
-    if (listing.documents.length + listing.skipped.length >= this.maxDocuments) {
-      throw new ContextTooLargeError(
-        `The context folder holds more than ${String(this.maxDocuments)} Markdown files`,
-      );
-    }
+  private async tryLoadDocument(relativePath: string): Promise<ContextDocument | SkippedFile> {
     try {
-      listing.documents.push(await this.loadDocument(relativePath));
+      return await this.loadDocument(relativePath);
     } catch (error) {
       if (!(error instanceof ContextError)) throw error;
-      listing.skipped.push({ path: relativePath, reason: error.message });
+      return { path: relativePath, reason: error.message };
     }
   }
 }
@@ -234,4 +267,11 @@ function isMarkdownFile(fileName: string): boolean {
 
 function byPath(a: { path: string }, b: { path: string }): number {
   return a.path.localeCompare(b.path);
+}
+
+function formatSize(bytes: number): string {
+  const megabyte = 1024 * 1024;
+  if (bytes >= megabyte) return `${String(Math.round(bytes / megabyte))} MB`;
+  if (bytes >= 1024) return `${String(Math.round(bytes / 1024))} KB`;
+  return `${String(bytes)} bytes`;
 }

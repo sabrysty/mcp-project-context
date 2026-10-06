@@ -9,6 +9,7 @@ import { registerGetFeatureDocTool } from './tools/get-feature-doc.js';
 import { registerGetProjectContextTool } from './tools/get-project-context.js';
 import { registerListFeaturesTool } from './tools/list-features.js';
 import { registerPingTool } from './tools/ping.js';
+import { registerSearchDocsTool } from './tools/search-docs.js';
 import type { ToolDependencies } from './tools/tool-helpers.js';
 
 export const SERVER_NAME = 'mcp-project-context';
@@ -35,6 +36,7 @@ export function createServer({ config, logger }: ServerDependencies): McpServer 
   registerListFeaturesTool(server, tools);
   registerGetFeatureDocTool(server, tools);
   registerGetConventionsTool(server, tools);
+  registerSearchDocsTool(server, tools);
 
   logger.debug('Server created', { contextDir: config.contextDir });
   return server;

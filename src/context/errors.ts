@@ -33,6 +33,11 @@ export class ContextTooLargeError extends ContextError {
   override name = 'ContextTooLargeError';
 }
 
+/** A search query that holds no searchable word. */
+export class InvalidQueryError extends ContextError {
+  override name = 'InvalidQueryError';
+}
+
 export function hasErrorCode(error: unknown, ...codes: string[]): boolean {
   return (
     error instanceof Error &&

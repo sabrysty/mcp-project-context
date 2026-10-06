@@ -34,6 +34,7 @@ describe('createServer', () => {
       'list_features',
       'get_feature_doc',
       'get_conventions',
+      'search_docs',
     ]);
     for (const tool of tools) {
       expect(tool.description?.length).toBeGreaterThan(50);
@@ -53,14 +54,24 @@ describe('createServer', () => {
       properties: { topic: { type: 'string', maxLength: 200 } },
     });
     expect(inputOf('get_conventions')).not.toHaveProperty('required');
+    expect(inputOf('search_docs')).toMatchObject({
+      properties: {
+        query: { type: 'string', minLength: 1, maxLength: 200 },
+        limit: { minimum: 1, maximum: 20, default: 5 },
+      },
+      required: ['query'],
+    });
   });
 
-  it('advertises the output schema of list_features', async () => {
+  it.each([
+    ['list_features', ['features', 'skipped']],
+    ['search_docs', ['query', 'terms', 'results', 'skipped']],
+  ])('advertises the output schema of %s', async (name, required) => {
     const tools = await test.client.listTools();
 
-    expect(tools.find((tool) => tool.name === 'list_features')?.outputSchema).toMatchObject({
+    expect(tools.find((tool) => tool.name === name)?.outputSchema).toMatchObject({
       type: 'object',
-      required: ['features', 'skipped'],
+      required,
     });
   });
 
