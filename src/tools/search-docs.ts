@@ -3,6 +3,7 @@ import * as z from 'zod/v4';
 
 import { locateDocument, type ProjectContext } from '../context/project-context.js';
 import type { SearchResult } from '../context/search.js';
+import { documentUri } from '../resources/context-documents.js';
 import { countOf, formatSkipped, joinSections } from './format.js';
 import { GET_CONVENTIONS_TOOL } from './get-conventions.js';
 import { GET_FEATURE_DOC_TOOL } from './get-feature-doc.js';
@@ -54,7 +55,12 @@ const outputSchema = z.object({
             'list items, table rows and code blocks holding one; "…" marks left-out text',
         ),
       score: z.number(),
-      readWith: z.string().optional().describe('Tool call that returns the whole document'),
+      readWith: z
+        .string()
+        .describe(
+          'How to read the whole document: a tool call, or the MCP resource to read for ' +
+            'documents that no tool returns',
+        ),
     }),
   ),
   note: z
@@ -104,8 +110,11 @@ function describeSection({ title, headings }: SearchResult): string {
   return [title, ...trail].join(' › ');
 }
 
-/** The tool call an agent can make to read the whole document a result comes from. */
-function readWith(path: string): string | undefined {
+/**
+ * How an agent can read the whole document a result comes from: a tool call when a tool
+ * returns it, since every client supports tools, else its resource.
+ */
+function readWith(path: string): string {
   const location = locateDocument(path);
   switch (location.kind) {
     case 'project':
@@ -115,7 +124,7 @@ function readWith(path: string): string | undefined {
     case 'convention':
       return `${GET_CONVENTIONS_TOOL} {"topic": ${JSON.stringify(location.topic)}}`;
     case 'other':
-      return undefined;
+      return `resource ${documentUri(path)}`;
   }
 }
 
@@ -138,9 +147,8 @@ function formatSearch({ query, terms, results, note, skipped }: SearchOutput): s
 }
 
 function formatHit(hit: SearchHit, index: number): string {
-  const header = [`## ${String(index + 1)}. ${hit.source} — ${hit.section}`];
-  if (hit.readWith) header.push(`Whole document: ${hit.readWith}`);
-  return [...header, '', hit.excerpt].join('\n');
+  const header = `## ${String(index + 1)}. ${hit.source} — ${hit.section}`;
+  return [header, `Whole document: ${hit.readWith}`, '', hit.excerpt].join('\n');
 }
 
 export function registerSearchDocsTool(
@@ -154,7 +162,8 @@ export function registerSearchDocsTool(
       description:
         'Full-text search across the whole project documentation: overview, features, coding ' +
         'conventions and security guidelines. Returns the most relevant sections, best first, ' +
-        'each with its source file, the tool call that returns the whole document and an ' +
+        'each with its source file, how to read the whole document (a tool call, or an MCP ' +
+        'resource) and an ' +
         'excerpt: the whole section when its heading names the topic, else only the passages ' +
         'that mention it ("…" marks left-out text). An excerpt can leave out nearby details: ' +
         'read the whole document before stating that something is not documented. Use it to ' +
