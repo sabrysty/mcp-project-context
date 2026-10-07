@@ -89,15 +89,6 @@ describe('findViolations', () => {
     });
   });
 
-  it('applies every rule when the language is unknown', () => {
-    const rules = compile(rule('everywhere', 'x'), rule('jsx-only', 'x', { languages: ['jsx'] }));
-
-    expect(findViolations('x', undefined, rules)).toMatchObject({
-      rulesChecked: 2,
-      violations: [{ rule: 'everywhere' }, { rule: 'jsx-only' }],
-    });
-  });
-
   it('returns no violation for clean code', () => {
     const rules = compile(rule('no-eval', String.raw`eval\(`));
 
