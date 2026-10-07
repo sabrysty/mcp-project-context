@@ -114,7 +114,7 @@ function describeSection({ title, headings }: SearchResult): string {
  * How an agent can read the whole document a result comes from: a tool call when a tool
  * returns it, since every client supports tools, else its resource.
  */
-function readWith(path: string): string {
+export function readWith(path: string): string {
   const location = locateDocument(path);
   switch (location.kind) {
     case 'project':

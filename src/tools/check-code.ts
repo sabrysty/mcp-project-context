@@ -113,7 +113,7 @@ function formatCheck({
   return joinSections([summary, ...violations.map(formatViolation)].join('\n'), truncation, note);
 }
 
-function formatViolation({ rule, severity, line, column, message, fix }: Violation): string {
+export function formatViolation({ rule, severity, line, column, message, fix }: Violation): string {
   return `- Line ${String(line)}, column ${String(column)} — ${severity} ${rule}: ${message}\n  Fix: ${fix}`;
 }
 
