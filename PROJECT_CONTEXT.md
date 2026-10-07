@@ -306,7 +306,15 @@ Objectif : **couverture > 80 %** sur `context/` et `security/`.
 
 ## 11. Étapes de développement
 
-Réaliser **une étape à la fois**, avec un commit par étape, puis s'arrêter pour validation.
+Réaliser **une étape à la fois**, selon ce flux de travail (GitHub Flow) :
+
+1. une **issue** GitHub par étape ;
+2. une **branche** par étape, partie de `master` : `feat/<sujet>`, `fix/<sujet>` ou `docs/<sujet>` ;
+3. des **commits réguliers et atomiques** (Conventional Commits) sur cette branche, chacun vérifié (lint, typecheck, tests) ;
+4. en fin d'étape : explication de chaque fonctionnalité, instructions de test manuel, puis **validation humaine** ;
+5. après validation seulement : push et **pull request** vers `master` qui ferme l'issue (`Closes #N`) ; le développeur relit et fusionne la PR.
+
+Étapes :
 
 1. **Init** : `package.json`, `tsconfig`, ESLint, Prettier, Vitest, `.gitignore`, structure des dossiers, logger, config. Le serveur démarre avec un tool `ping`.
 2. **Données de démo** : créer `examples/taskflow-context/` complet.
@@ -353,7 +361,8 @@ Le README est la vitrine du projet. Il doit contenir :
 ## 14. Instructions pour l'agent IA
 
 - Lire ce fichier en entier avant toute action.
-- Travailler **étape par étape** (section 11) et **s'arrêter après chaque étape** pour validation humaine.
+- Travailler **étape par étape** (section 11) et **s'arrêter après chaque étape** pour validation humaine, avant tout push.
+- Ne jamais commiter sur `master` : chaque changement passe par une branche et une pull request (section 11).
 - **Ne jamais deviner une API** : vérifier la doc du SDK MCP v2 en cas de doute.
 - Demander avant d'ajouter une dépendance non listée en section 3.
 - Écrire les tests **en même temps** que le code, pas après.
