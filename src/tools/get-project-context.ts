@@ -8,7 +8,7 @@ import {
   READ_ONLY_ANNOTATIONS,
   runTool,
   textResult,
-  type ToolDependencies,
+  type HandlerDependencies,
 } from './tool-helpers.js';
 
 export const GET_PROJECT_CONTEXT_TOOL = 'get_project_context';
@@ -28,7 +28,7 @@ export async function getProjectContext(context: ProjectContext): Promise<CallTo
 
 export function registerGetProjectContextTool(
   server: McpServer,
-  { context, logger }: ToolDependencies,
+  { context, logger }: HandlerDependencies,
 ): void {
   server.registerTool(
     GET_PROJECT_CONTEXT_TOOL,

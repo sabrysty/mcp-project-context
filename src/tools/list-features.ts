@@ -3,7 +3,7 @@ import * as z from 'zod/v4';
 
 import type { ProjectContext } from '../context/project-context.js';
 import { countOf, formatSkipped, joinSections } from './format.js';
-import { READ_ONLY_ANNOTATIONS, runTool, type ToolDependencies } from './tool-helpers.js';
+import { READ_ONLY_ANNOTATIONS, runTool, type HandlerDependencies } from './tool-helpers.js';
 
 export const LIST_FEATURES_TOOL = 'list_features';
 
@@ -68,7 +68,7 @@ function formatFeatureLine({ name, title, tags, updated }: FeatureSummary): stri
 
 export function registerListFeaturesTool(
   server: McpServer,
-  { context, logger }: ToolDependencies,
+  { context, logger }: HandlerDependencies,
 ): void {
   server.registerTool(
     LIST_FEATURES_TOOL,

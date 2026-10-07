@@ -10,7 +10,7 @@ import {
   READ_ONLY_ANNOTATIONS,
   runTool,
   textResult,
-  type ToolDependencies,
+  type HandlerDependencies,
 } from './tool-helpers.js';
 
 export const GET_FEATURE_DOC_TOOL = 'get_feature_doc';
@@ -52,7 +52,7 @@ export async function getFeatureDoc(
 
 export function registerGetFeatureDocTool(
   server: McpServer,
-  { context, logger }: ToolDependencies,
+  { context, logger }: HandlerDependencies,
 ): void {
   server.registerTool(
     GET_FEATURE_DOC_TOOL,

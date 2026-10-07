@@ -7,7 +7,7 @@ import { countOf, formatSkipped, joinSections } from './format.js';
 import { GET_CONVENTIONS_TOOL } from './get-conventions.js';
 import { GET_FEATURE_DOC_TOOL } from './get-feature-doc.js';
 import { GET_PROJECT_CONTEXT_TOOL } from './get-project-context.js';
-import { READ_ONLY_ANNOTATIONS, runTool, type ToolDependencies } from './tool-helpers.js';
+import { READ_ONLY_ANNOTATIONS, runTool, type HandlerDependencies } from './tool-helpers.js';
 
 export const SEARCH_DOCS_TOOL = 'search_docs';
 export const DEFAULT_SEARCH_LIMIT = 5;
@@ -145,7 +145,7 @@ function formatHit(hit: SearchHit, index: number): string {
 
 export function registerSearchDocsTool(
   server: McpServer,
-  { context, logger }: ToolDependencies,
+  { context, logger }: HandlerDependencies,
 ): void {
   server.registerTool(
     SEARCH_DOCS_TOOL,

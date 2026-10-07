@@ -9,7 +9,7 @@ import {
   errorResult,
   READ_ONLY_ANNOTATIONS,
   runTool,
-  type ToolDependencies,
+  type HandlerDependencies,
 } from './tool-helpers.js';
 
 export const CHECK_CODE_TOOL = 'check_code';
@@ -119,7 +119,7 @@ function formatViolation({ rule, severity, line, column, message, fix }: Violati
 
 export function registerCheckCodeTool(
   server: McpServer,
-  { context, logger }: ToolDependencies,
+  { context, logger }: HandlerDependencies,
 ): void {
   server.registerTool(
     CHECK_CODE_TOOL,

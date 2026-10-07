@@ -3,6 +3,7 @@ import { McpServer } from '@modelcontextprotocol/server';
 import type { Config } from './config.js';
 import { ContextLoader } from './context/loader.js';
 import { ProjectContext, RULES_FILE } from './context/project-context.js';
+import type { HandlerDependencies } from './handler-helpers.js';
 import type { Logger } from './logger.js';
 import { loadRules } from './security/rules.js';
 import { registerCheckCodeTool } from './tools/check-code.js';
@@ -12,7 +13,6 @@ import { registerGetProjectContextTool } from './tools/get-project-context.js';
 import { registerListFeaturesTool } from './tools/list-features.js';
 import { registerPingTool } from './tools/ping.js';
 import { registerSearchDocsTool } from './tools/search-docs.js';
-import type { ToolDependencies } from './tools/tool-helpers.js';
 
 export const SERVER_NAME = 'mcp-project-context';
 export const SERVER_VERSION = '0.1.0';
@@ -32,15 +32,15 @@ export async function createServer({ config, logger }: ServerDependencies): Prom
   await checkRulesAtStartup(context, logger);
 
   const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });
-  const tools: ToolDependencies = { context, logger };
+  const dependencies: HandlerDependencies = { context, logger };
 
   registerPingTool(server);
-  registerGetProjectContextTool(server, tools);
-  registerListFeaturesTool(server, tools);
-  registerGetFeatureDocTool(server, tools);
-  registerGetConventionsTool(server, tools);
-  registerSearchDocsTool(server, tools);
-  registerCheckCodeTool(server, tools);
+  registerGetProjectContextTool(server, dependencies);
+  registerListFeaturesTool(server, dependencies);
+  registerGetFeatureDocTool(server, dependencies);
+  registerGetConventionsTool(server, dependencies);
+  registerSearchDocsTool(server, dependencies);
+  registerCheckCodeTool(server, dependencies);
 
   logger.debug('Server created', { contextDir: config.contextDir });
   return server;
