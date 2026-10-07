@@ -212,7 +212,8 @@ Vérifier dans la doc v2 la façon de déclarer des resources à URI dynamique (
 
 ### 5.5 Prompts
 
-- `review-with-conventions` (argument : `code`) : construit un prompt de revue de code qui injecte les conventions et règles de sécurité pertinentes.
+- `review-with-conventions` (argument facultatif : `files`, chemins séparés par des virgules) : construit un prompt de revue de code qui injecte les conventions et règles de sécurité, et demande à l'agent de relire les fichiers indiqués (à défaut, le code donné dans la conversation ou les modifications non commitées) en commençant par `check_code`.
+  _Le code n'est pas passé en argument : les clients transmettent les arguments de prompt comme de courtes chaînes, et Claude Code les découpe même sur les espaces (constaté à l'étape 8). Un agent lit lui-même le code ; le serveur, lui, ne lit que le dossier de contexte._
 - `explain-feature` (argument : `name`) : construit un prompt qui explique une feature à un nouveau développeur à partir de sa doc.
 
 ---
