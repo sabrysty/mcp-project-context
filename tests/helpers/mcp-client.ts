@@ -75,11 +75,25 @@ export class TestClient {
   }
 }
 
-function resultOf(response: JSONRPCMessage): unknown {
+export function resultOf(response: JSONRPCMessage): unknown {
   if (!('result' in response)) {
     throw new Error(`Unexpected JSON-RPC response: ${JSON.stringify(response)}`);
   }
   return response.result;
+}
+
+export interface JsonRpcError {
+  code: number;
+  message: string;
+  data?: unknown;
+}
+
+/** The error of a JSON-RPC response; fails when the request succeeded. */
+export function errorOf(response: JSONRPCMessage): JsonRpcError {
+  if (!('error' in response)) {
+    throw new Error(`Expected a JSON-RPC error, got: ${JSON.stringify(response)}`);
+  }
+  return response.error;
 }
 
 /** The text blocks of a tool result, joined. */
@@ -93,11 +107,16 @@ export interface TestServer {
   initializeResponse: JSONRPCMessage;
 }
 
-/** Starts a server reading `contextDir` and returns a client that has completed initialization. */
-export async function startTestServer(contextDir: string): Promise<TestServer> {
+/**
+ * Starts a server reading `contextDir` and returns a client that has completed initialization.
+ * The server logs go to `logs` when given, else nowhere.
+ */
+export async function startTestServer(contextDir: string, logs?: string[]): Promise<TestServer> {
   const server = await createServer({
-    config: { contextDir, logLevel: 'error' },
-    logger: createLogger('error', () => undefined),
+    config: { contextDir, logLevel: 'debug' },
+    logger: logs
+      ? createLogger('debug', (line) => logs.push(line))
+      : createLogger('error', () => undefined),
   });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await server.connect(serverTransport);

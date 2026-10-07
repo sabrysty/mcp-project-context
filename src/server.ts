@@ -5,6 +5,7 @@ import { ContextLoader } from './context/loader.js';
 import { ProjectContext, RULES_FILE } from './context/project-context.js';
 import type { HandlerDependencies } from './handler-helpers.js';
 import type { Logger } from './logger.js';
+import { registerContextDocumentResources } from './resources/context-documents.js';
 import { loadRules } from './security/rules.js';
 import { registerCheckCodeTool } from './tools/check-code.js';
 import { registerGetConventionsTool } from './tools/get-conventions.js';
@@ -23,7 +24,7 @@ export interface ServerDependencies {
 }
 
 /**
- * Creates the MCP server and registers its tools, without connecting any transport,
+ * Creates the MCP server and registers its tools and resources, without connecting any transport,
  * so that it can be exercised directly in tests. Rejects when the security rules of the
  * context folder are invalid: a server whose guardrails are broken must not start.
  */
@@ -41,6 +42,8 @@ export async function createServer({ config, logger }: ServerDependencies): Prom
   registerGetConventionsTool(server, dependencies);
   registerSearchDocsTool(server, dependencies);
   registerCheckCodeTool(server, dependencies);
+
+  registerContextDocumentResources(server, dependencies);
 
   logger.debug('Server created', { contextDir: config.contextDir });
   return server;

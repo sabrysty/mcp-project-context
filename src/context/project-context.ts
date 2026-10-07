@@ -1,9 +1,10 @@
-import type { ContextDocument, ContextLoader, SkippedFile } from './loader.js';
+import type { ContextDocument, ContextLoader, DocumentListing, SkippedFile } from './loader.js';
 import { parseQuery, searchDocuments, type SearchResult } from './search.js';
 
 export const PROJECT_FILE = 'project.md';
 export const FEATURES_FOLDER = 'features';
 export const CONVENTIONS_FOLDER = 'conventions';
+export const SECURITY_GUIDELINES_FILE = 'security/guidelines.md';
 export const RULES_FILE = 'security/rules.json';
 
 /** A document of a collection (features, conventions) with the name used to fetch it. */
@@ -56,9 +57,23 @@ export class ProjectContext {
     return this.getEntry(CONVENTIONS_FOLDER, topic);
   }
 
+  getSecurityGuidelines(): Promise<ContextDocument> {
+    return this.loader.loadDocument(SECURITY_GUIDELINES_FILE);
+  }
+
   /** Text of the security rules checked by check_code (PROJECT_CONTEXT.md §5.3). */
   readRules(): Promise<string> {
     return this.loader.readText(RULES_FILE);
+  }
+
+  /** Every Markdown document of the context, whatever its folder. */
+  listDocuments(): Promise<DocumentListing> {
+    return this.loader.listDocuments();
+  }
+
+  /** Any Markdown document, by its path relative to the context folder, `.md` optional. */
+  getDocument(path: string): Promise<ContextDocument> {
+    return this.loader.loadDocument(`${stripMarkdownExtension(path)}.md`);
   }
 
   /** Full-text search across every Markdown document of the context. */
@@ -102,6 +117,6 @@ function entryName(folder: string, path: string): string {
   return stripMarkdownExtension(path.slice(folder.length + 1));
 }
 
-function stripMarkdownExtension(name: string): string {
+export function stripMarkdownExtension(name: string): string {
   return name.replace(/\.md$/i, '');
 }
