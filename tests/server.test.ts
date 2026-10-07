@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { SERVER_NAME } from '../src/server.js';
+import { createLogger } from '../src/logger.js';
+import { InvalidRulesError } from '../src/security/rules.js';
+import { createServer, SERVER_NAME } from '../src/server.js';
+import { createFixtureDir, removeFixtureDir } from './helpers/fixture-dir.js';
 import {
   DEMO_CONTEXT_DIR,
   startTestServer,
@@ -35,6 +38,7 @@ describe('createServer', () => {
       'get_feature_doc',
       'get_conventions',
       'search_docs',
+      'check_code',
     ]);
     for (const tool of tools) {
       expect(tool.description?.length).toBeGreaterThan(50);
@@ -61,11 +65,19 @@ describe('createServer', () => {
       },
       required: ['query'],
     });
+    expect(inputOf('check_code')).toMatchObject({
+      properties: {
+        code: { type: 'string', minLength: 1, maxLength: 50_000 },
+        language: { enum: ['ts', 'js', 'tsx', 'jsx'] },
+      },
+      required: ['code', 'language'],
+    });
   });
 
   it.each([
     ['list_features', ['features', 'skipped']],
     ['search_docs', ['query', 'terms', 'results', 'skipped']],
+    ['check_code', ['language', 'rulesChecked', 'errors', 'warnings', 'violations', 'note']],
   ])('advertises the output schema of %s', async (name, required) => {
     const tools = await test.client.listTools();
 
@@ -80,5 +92,39 @@ describe('createServer', () => {
 
     expect(textOf(result)).toBe('pong');
     expect(result.isError).toBeUndefined();
+  });
+});
+
+describe('createServer at startup', () => {
+  function start(contextDir: string, logs: string[] = []) {
+    return createServer({
+      config: { contextDir, logLevel: 'warn' },
+      logger: createLogger('warn', (line) => logs.push(line)),
+    });
+  }
+
+  it('refuses to start when security/rules.json is invalid, naming the rule', async () => {
+    const root = await createFixtureDir({
+      'security/rules.json': JSON.stringify([
+        { id: 'no-eval', severity: 'error', pattern: '(eval', message: 'm', fix: 'f' },
+      ]),
+    });
+
+    await expect(start(root)).rejects.toThrow(InvalidRulesError);
+    await expect(start(root)).rejects.toThrow('rule "no-eval" has an invalid pattern');
+    await removeFixtureDir(root);
+  });
+
+  it('starts without security rules, and warns that check_code has none', async () => {
+    const root = await createFixtureDir({ 'project.md': '# Project' });
+    const logs: string[] = [];
+
+    const server = await start(root, logs);
+
+    expect(logs.join('\n')).toContain(
+      'WARN No security/rules.json in the context folder: check_code has no rule to apply',
+    );
+    await server.close();
+    await removeFixtureDir(root);
   });
 });
