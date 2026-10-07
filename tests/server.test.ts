@@ -6,6 +6,7 @@ import { createServer, SERVER_NAME } from '../src/server.js';
 import { createFixtureDir, removeFixtureDir } from './helpers/fixture-dir.js';
 import {
   DEMO_CONTEXT_DIR,
+  resultOf,
   startTestServer,
   textOf,
   type TestServer,
@@ -26,6 +27,25 @@ describe('createServer', () => {
     expect(test.initializeResponse).toMatchObject({
       result: { serverInfo: { name: SERVER_NAME } },
     });
+  });
+
+  it('declares tools, resources, prompts and completions', () => {
+    expect(test.initializeResponse).toMatchObject({
+      result: { capabilities: { tools: {}, resources: {}, prompts: {}, completions: {} } },
+    });
+  });
+
+  it('registers the two prompts of PROJECT_CONTEXT.md §5.5, with a description', async () => {
+    const result = resultOf(await test.client.request('prompts/list'));
+    const prompts = (result as { prompts: { name: string; description?: string }[] }).prompts;
+
+    expect(prompts.map((prompt) => prompt.name)).toEqual([
+      'review-with-conventions',
+      'explain-feature',
+    ]);
+    for (const prompt of prompts) {
+      expect(prompt.description?.length).toBeGreaterThan(50);
+    }
   });
 
   it('registers every tool as read-only, with a description', async () => {

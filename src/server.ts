@@ -5,6 +5,7 @@ import { ContextLoader } from './context/loader.js';
 import { ProjectContext, RULES_FILE } from './context/project-context.js';
 import type { HandlerDependencies } from './handler-helpers.js';
 import type { Logger } from './logger.js';
+import { registerExplainFeaturePrompt } from './prompts/explain-feature.js';
 import { registerReviewWithConventionsPrompt } from './prompts/review-with-conventions.js';
 import { registerContextDocumentResources } from './resources/context-documents.js';
 import { loadRules } from './security/rules.js';
@@ -47,6 +48,7 @@ export async function createServer({ config, logger }: ServerDependencies): Prom
   registerContextDocumentResources(server, dependencies);
 
   registerReviewWithConventionsPrompt(server, dependencies);
+  registerExplainFeaturePrompt(server, dependencies);
 
   logger.debug('Server created', { contextDir: config.contextDir });
   return server;
