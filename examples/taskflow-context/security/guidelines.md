@@ -20,13 +20,13 @@ Ces règles s'appliquent à tout le code de TaskFlow, qu'il soit écrit à la ma
 
 ## Règles vérifiées automatiquement
 
-| Identifiant               | Sévérité | Résumé                                 |
-| ------------------------- | -------- | -------------------------------------- |
-| `no-eval`                 | error    | `eval()` interdit                      |
-| `no-hardcoded-secret`     | error    | Pas de secret codé en dur              |
-| `no-sql-concat`           | error    | Pas de SQL construit par concaténation |
-| `no-console-log`          | warning  | Pas de `console.log` en production     |
-| `no-dangerously-set-html` | warning  | Pas de `dangerouslySetInnerHTML`       |
+| Identifiant               | Sévérité | Résumé                                                  |
+| ------------------------- | -------- | ------------------------------------------------------- |
+| `no-eval`                 | error    | `eval()` et `new Function()` interdits                  |
+| `no-hardcoded-secret`     | error    | Pas de secret codé en dur                               |
+| `no-sql-concat`           | error    | Pas de SQL construit par concaténation ou interpolation |
+| `no-console-log`          | warning  | Pas de `console.log` en production                      |
+| `no-dangerously-set-html` | warning  | Pas de `dangerouslySetInnerHTML`                        |
 
 ### `no-eval`
 
