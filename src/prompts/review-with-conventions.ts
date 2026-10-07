@@ -28,9 +28,13 @@ const argsSchema = z.object({
     .optional(),
 });
 
-/** The paths of the `files` argument, separated by commas or line breaks, blanks ignored. */
+/**
+ * The paths of the `files` argument. Separated by commas, but spaces and line breaks too:
+ * clients join lists their own way (PowerShell turns "a.ts,b.ts" into "a.ts b.ts"), and a
+ * path with spaces is rare in a code base.
+ */
 export function parseFiles(files: string | undefined): string[] {
-  const paths = (files ?? '').split(/[,\n]/).map((path) => path.trim());
+  const paths = (files ?? '').split(/[\s,]+/);
   return [...new Set(paths.filter((path) => path !== ''))];
 }
 

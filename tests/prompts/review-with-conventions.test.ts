@@ -42,6 +42,10 @@ describe('parseFiles', () => {
     expect(parseFiles(' a.ts , ,b.ts\nc.ts,a.ts ')).toEqual(['a.ts', 'b.ts', 'c.ts']);
   });
 
+  it('splits the paths on spaces too, as PowerShell joins "a.ts,b.ts" into "a.ts b.ts"', () => {
+    expect(parseFiles('src/a.ts src/b.ts')).toEqual(['src/a.ts', 'src/b.ts']);
+  });
+
   it('gives no path when the argument is missing or blank', () => {
     expect(parseFiles(undefined)).toEqual([]);
     expect(parseFiles(' , \n ')).toEqual([]);
