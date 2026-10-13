@@ -43,6 +43,17 @@ Statuts et priorités sont définis une seule fois, dans `@taskflow/shared` (`TA
 - Une tâche archivée disparaît des listes et ne peut plus être modifiée, sauf restauration. Elle reste restaurable 90 jours, puis un job planifié la purge.
 - L'assigné doit être membre du workspace de la tâche.
 
+### Archivage et restauration
+
+`DELETE /tasks/:taskId` suit cet ordre :
+
+1. Charger la tâche avec son workspace, archivée ou non. Introuvable : `404`.
+2. Vérifier le droit (auteur, admin ou owner). Sinon : `403`, même si la tâche est déjà archivée.
+3. Tâche déjà archivée : répondre `204` sans rien changer. `archivedAt` garde sa date d'origine, pour ne pas repousser la purge.
+4. Sinon, renseigner `archivedAt` (UTC) et répondre `204`.
+
+Archiver est donc **idempotent**, comme doit l'être un `DELETE` : un double clic ou une requête rejouée après une coupure réseau ne produit pas d'erreur. De même, restaurer une tâche qui n'est pas archivée la renvoie telle quelle (`200`) ; une tâche purgée n'existe plus (`404`).
+
 ## Endpoints
 
 Préfixe : `/api/v1/workspaces/:workspaceId`. Toutes les routes exigent d'être authentifié **et** membre du workspace (`WorkspaceMemberGuard`).
@@ -114,7 +125,7 @@ Content-Type: application/json
 
 ## Tests à maintenir
 
-- e2e : création, lecture, modification et archivage ; filtres et pagination ; tâche d'un autre workspace → `404` ; assigné non membre → `422` ; conflit de version → `409` ; archivage puis restauration.
+- e2e : création, lecture, modification et archivage ; filtres et pagination ; tâche d'un autre workspace → `404` ; assigné non membre → `422` ; conflit de version → `409` ; archivage puis restauration ; archivage par un member qui n'est pas l'auteur → `403` ; nouvel archivage d'une tâche archivée → `204`, `archivedAt` inchangé.
 - Unitaires : calcul des positions, gestion de `completedAt` lors des changements de statut.
 - Front : glisser-déposer avec mise à jour optimiste et retour arrière en cas d'erreur (API simulée avec MSW).
 
