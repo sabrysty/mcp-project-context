@@ -59,11 +59,12 @@ Préfixe : `/api/v1/workspaces/:workspaceId`. Toutes les routes exigent d'être 
 
 Filtres de `GET /tasks` : `status`, `priority`, `assigneeId`, `q` (recherche dans le titre), `dueBefore`, `page` (1 par défaut), `limit` (20 par défaut, 100 au plus), `sort` (`position`, `dueDate`, `-createdAt`…).
 
-Codes d'erreur propres à la feature :
+Codes d'erreur propres à la feature. Le service lève l'erreur métier indiquée, définie dans `tasks/tasks.errors.ts`, et le filtre global la traduit en code HTTP (voir les [conventions NestJS](../conventions/nestjs.md#erreurs)) :
 
-- `404` : la tâche n'existe pas **ou** appartient à un autre workspace (son existence n'est pas révélée).
-- `409` : la `version` envoyée ne correspond plus, la tâche a été modifiée entre-temps.
-- `422` : règle métier non respectée, par exemple un assigné qui n'est pas membre du workspace.
+- `403` (`TaskActionForbiddenError`) : le membre n'a pas le droit de faire cette action, d'après les règles métier.
+- `404` (`TaskNotFoundError`) : la tâche n'existe pas **ou** appartient à un autre workspace (son existence n'est pas révélée).
+- `409` (`TaskVersionConflictError`) : la `version` envoyée ne correspond plus, la tâche a été modifiée entre-temps.
+- `422` (`AssigneeNotMemberError`…) : règle métier non respectée, par exemple un assigné qui n'est pas membre du workspace.
 
 Exemple de création :
 

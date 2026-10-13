@@ -2,7 +2,7 @@
 title: Conventions TypeScript
 tags: [typescript, conventions, naming, errors, async]
 owner: tech lead
-updated: 2026-09-12
+updated: 2026-10-13
 ---
 
 # Conventions TypeScript
@@ -56,10 +56,10 @@ enum Status {
 ## Erreurs
 
 - Ne jamais lancer une chaîne (`throw 'oops'`) : toujours une instance d'`Error`.
-- Les erreurs métier ont leur propre classe, qui étend `DomainError` (`packages/shared/src/errors.ts`) :
+- Les erreurs métier ont leur propre classe. Elle étend l'une des classes de base de `packages/shared/src/errors.ts` (`NotFoundError`, `ForbiddenError`, `ConflictError`, `BusinessRuleError`), toutes dérivées de `DomainError`. Côté API, ces classes fixent le code HTTP renvoyé, et chaque module range ses erreurs dans `<module>.errors.ts` : voir les [conventions NestJS](nestjs.md#erreurs).
 
 ```ts
-export class TaskNotFoundError extends DomainError {
+export class TaskNotFoundError extends NotFoundError {
   constructor(taskId: string) {
     super(`Task ${taskId} not found`);
   }

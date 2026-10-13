@@ -21,7 +21,7 @@ apps/api/src/
 │   └── env.schema.ts         # Validation des variables d'environnement
 ├── common/
 │   ├── decorators/           # @Public(), @CurrentUser(), @CurrentMember(), @Roles()
-│   ├── filters/              # Filtre d'exceptions global
+│   ├── filters/              # DomainExceptionFilter : erreurs métier → réponses HTTP
 │   └── guards/               # JwtAuthGuard, WorkspaceMemberGuard, RolesGuard
 ├── database/
 │   └── migrations/
@@ -30,6 +30,7 @@ apps/api/src/
     ├── tasks.controller.ts
     ├── tasks.service.ts
     ├── tasks.service.spec.ts
+    ├── tasks.errors.ts       # Erreurs métier du module
     ├── dto/
     │   ├── create-task.dto.ts
     │   ├── update-task.dto.ts
@@ -138,8 +139,29 @@ this.logger.warn(`Task ${taskId} archived by a non-creator (user ${userId})`);
 
 ## Erreurs
 
-- Côté HTTP : les exceptions intégrées de Nest (`NotFoundException`, `ConflictException`, `ForbiddenException`…).
-- Les services lèvent des erreurs métier (`TaskNotFoundError`…) ; le filtre global `DomainExceptionFilter` les traduit en réponses HTTP.
+- Un service ne connaît pas HTTP : il ne lève jamais d'exception de Nest (`NotFoundException`…), seulement des **erreurs métier**. Le filtre global `DomainExceptionFilter` les traduit en réponses HTTP.
+- Les exceptions intégrées de Nest restent réservées aux contrôleurs, guards et pipes.
+- Chaque erreur métier étend l'une des classes de base de `packages/shared/src/errors.ts`, toutes dérivées de `DomainError`. C'est cette classe qui fixe le code HTTP :
+
+| Classe de base      | HTTP | Quand                                                               | Exemples                                            |
+| ------------------- | ---- | ------------------------------------------------------------------- | --------------------------------------------------- |
+| `NotFoundError`     | 404  | La ressource n'existe pas, ou appartient à un autre workspace       | `TaskNotFoundError`                                 |
+| `ForbiddenError`    | 403  | Le membre n'a pas le droit de faire cette action                    | `TaskActionForbiddenError`                          |
+| `ConflictError`     | 409  | L'état a changé entre-temps, ou une valeur unique est déjà utilisée | `TaskVersionConflictError`, `EmailAlreadyUsedError` |
+| `BusinessRuleError` | 422  | Règle métier non respectée                                          | `AssigneeNotMemberError`                            |
+
+- Toute autre erreur devient une `500` : le filtre la journalise (niveau `error`, avec le `requestId`) et ne renvoie qu'un message générique.
+- Les erreurs d'un module sont rangées dans `<module>/<module>.errors.ts` : `tasks/tasks.errors.ts`. Leur message est renvoyé au client : en anglais, sans donnée sensible.
+
+```ts
+// tasks/tasks.errors.ts
+export class TaskActionForbiddenError extends ForbiddenError {
+  constructor(taskId: string, action: 'edit' | 'archive' | 'restore') {
+    super(`Not allowed to ${action} task ${taskId}`);
+  }
+}
+```
+
 - Format de réponse unique : `{ statusCode, error, message, requestId }`. Jamais de stack trace renvoyée au client.
 
 ## Accès aux données (TypeORM)
