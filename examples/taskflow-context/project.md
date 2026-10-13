@@ -2,7 +2,7 @@
 title: TaskFlow — Contexte du projet
 tags: [overview, architecture, stack, nestjs, react, postgresql]
 owner: tech lead
-updated: 2026-09-30
+updated: 2026-10-13
 ---
 
 # TaskFlow — Contexte du projet
@@ -57,7 +57,7 @@ taskflow/
 
 1. La SPA appelle l'API REST (`/api/v1/...`) avec l'access token JWT dans l'en-tête `Authorization: Bearer`.
 2. Le `JwtAuthGuard` global valide le token ; les routes publiques sont marquées `@Public()`.
-3. Le `WorkspaceMemberGuard` vérifie que l'utilisateur appartient au workspace de la route.
+3. Le `WorkspaceMemberGuard` vérifie que l'utilisateur appartient au workspace de la route, et charge son rôle dans ce workspace (`@CurrentMember()`). Le token ne contient aucun rôle.
 4. Le contrôleur valide l'entrée (DTO + `ValidationPipe`) et délègue au service.
 5. Le service applique les règles métier et accède à PostgreSQL via TypeORM.
 6. La réponse est un DTO de sortie, jamais une entité brute.

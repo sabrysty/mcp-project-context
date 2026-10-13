@@ -2,7 +2,7 @@
 title: Gestion des tâches
 tags: [tasks, kanban, workspace, nestjs, react, typeorm]
 owner: équipe produit
-updated: 2026-09-26
+updated: 2026-10-13
 ---
 
 # Gestion des tâches
@@ -102,6 +102,7 @@ Content-Type: application/json
 ## Points d'attention
 
 - **IDOR** : toujours charger une tâche avec son workspace (`where: { id: taskId, workspaceId }`). Le `workspaceId` vient de la route, validée par le guard, jamais du body.
+- **Rôle du membre** : lu dans `@CurrentMember()`, que `WorkspaceMemberGuard` charge en base à chaque requête, jamais dans le token (`@CurrentUser()` ne porte que l'`id`). Les droits « si auteur » ou « si assigné » des règles métier se vérifient dans le service, une fois la tâche chargée.
 - **Assigné** : vérifier qu'il est membre du même workspace, sinon `422`.
 - **Recherche `q`** : `ILIKE` paramétré via le QueryBuilder, en échappant les `%` et `_` saisis par l'utilisateur (`escapeLike`).
 - **Pagination** : `limit` plafonné à 100 dans le DTO.

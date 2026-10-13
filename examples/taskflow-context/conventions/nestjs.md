@@ -2,7 +2,7 @@
 title: Conventions NestJS
 tags: [nestjs, backend, dto, validation, config, logger, typeorm]
 owner: équipe back
-updated: 2026-09-24
+updated: 2026-10-13
 ---
 
 # Conventions NestJS (`apps/api`)
@@ -20,7 +20,7 @@ apps/api/src/
 ├── config/
 │   └── env.schema.ts         # Validation des variables d'environnement
 ├── common/
-│   ├── decorators/           # @Public(), @CurrentUser(), @Roles()
+│   ├── decorators/           # @Public(), @CurrentUser(), @CurrentMember(), @Roles()
 │   ├── filters/              # Filtre d'exceptions global
 │   └── guards/               # JwtAuthGuard, WorkspaceMemberGuard, RolesGuard
 ├── database/
@@ -169,8 +169,29 @@ const tasks = await this.dataSource.query("SELECT * FROM tasks WHERE title LIKE 
 ## Authentification et autorisation
 
 - `JwtAuthGuard` est global : toute route est protégée par défaut, les routes publiques portent `@Public()`.
-- L'utilisateur courant s'obtient avec `@CurrentUser()`, jamais en lisant un identifiant dans le body.
-- L'appartenance au workspace est vérifiée par `WorkspaceMemberGuard`, les rôles par `@Roles('admin', 'owner')`.
+- L'utilisateur courant s'obtient avec `@CurrentUser()`, jamais en lisant un identifiant dans le body. Il ne porte que son `id` (`AuthenticatedUser`) : le token ne contient aucun rôle.
+- `WorkspaceMemberGuard` vérifie que l'utilisateur est membre du workspace de la route. Il charge pour cela, en base et à chaque requête, son appartenance au workspace, que les contrôleurs obtiennent avec `@CurrentMember()` : `WorkspaceMember`, soit `{ userId, workspaceId, role }`.
+- **Le rôle se lit dans `@CurrentMember()`, jamais dans le token** : un même utilisateur peut être admin d'un workspace et simple member d'un autre, et son rôle peut changer à tout moment.
+- Un droit qui ne dépend que du rôle (gérer les membres) se déclare sur la route : `@Roles('admin', 'owner')`, vérifié par `RolesGuard`.
+- Un droit qui dépend aussi de la ressource (« si auteur ») se vérifie dans le service, une fois la ressource chargée : le contrôleur lui passe le `WorkspaceMember`.
+
+```ts
+// ✅ le service reçoit l'appartenance chargée par le guard : workspace et rôle compris
+@Delete(':taskId')
+@HttpCode(204)
+async archive(
+  @Param('taskId', ParseUUIDPipe) taskId: string,
+  @CurrentMember() member: WorkspaceMember,
+): Promise<void> {
+  await this.tasksService.archive(member, taskId);
+}
+```
+
+```ts
+// ❌ rôle lu sur l'utilisateur du token : il n'en a pas, et un rôle dépend du workspace
+await this.tasksService.archive(workspaceId, taskId, user.id, user.role);
+```
+
 - Détails : [authentification](../features/authentication.md).
 
 ## Tests

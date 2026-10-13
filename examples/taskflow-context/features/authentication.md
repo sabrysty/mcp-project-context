@@ -2,7 +2,7 @@
 title: Authentification
 tags: [auth, jwt, nestjs]
 owner: équipe back
-updated: 2026-10-01
+updated: 2026-10-13
 ---
 
 # Authentification
@@ -107,7 +107,7 @@ Cookie de rafraîchissement : `refresh_token`, avec `HttpOnly`, `Secure`, `SameS
 - **CSRF** : `/auth/refresh` s'appuie sur un cookie. `SameSite=Strict` et la vérification de l'en-tête `Origin` empêchent de l'appeler depuis un autre site.
 - **Jamais dans les logs** : mot de passe, token, hash. Un échec de connexion est journalisé avec l'IP et l'e-mail masqué.
 - **Jamais dans `localStorage`** : ni l'access token, ni le refresh token.
-- **Payload JWT minimal** : les rôles ne sont pas dans le token. Ils sont vérifiés en base, par workspace, à chaque requête, car ils peuvent changer à tout moment.
+- **Payload JWT minimal** : les rôles ne sont pas dans le token. Ils sont vérifiés en base, par workspace, à chaque requête, car ils peuvent changer à tout moment : `WorkspaceMemberGuard` charge l'appartenance au workspace, que le code lit avec `@CurrentMember()`.
 - Un changement de mot de passe révoque toutes les sessions de l'utilisateur.
 
 ## Tests à maintenir

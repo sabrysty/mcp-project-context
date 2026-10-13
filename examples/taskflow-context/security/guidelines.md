@@ -2,7 +2,7 @@
 title: Règles de sécurité
 tags: [security, owasp, secrets, injection, xss, auth]
 owner: référent sécurité
-updated: 2026-10-01
+updated: 2026-10-13
 ---
 
 # Règles de sécurité
@@ -94,6 +94,8 @@ Les template literals (`` `… WHERE id = ${taskId}` ``) posent exactement le m�
 
 - Une ressource est toujours chargée **avec** son workspace (`where: { id: taskId, workspaceId }`), jamais par son seul identifiant.
 - L'identité de l'utilisateur vient du token (`@CurrentUser()`), jamais du body ni de la query.
+- Son rôle, lui, ne vient **jamais** du token : il dépend du workspace et peut changer à tout moment. Il se lit dans `@CurrentMember()`, chargé en base à chaque requête par `WorkspaceMemberGuard`.
+- Un droit qui dépend de la ressource (« si auteur ») se vérifie dans le service, une fois la ressource chargée.
 - Ressource d'un autre workspace : répondre **404**, pas 403, pour ne pas révéler son existence.
 
 ### Validation des entrées
