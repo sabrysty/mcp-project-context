@@ -1,6 +1,7 @@
 # mcp-project-context
 
 [![CI](https://github.com/sabrysty/mcp-project-context/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/sabrysty/mcp-project-context/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Node.js 22+](https://img.shields.io/badge/node-%E2%89%A522-339933)
 
 **An MCP server that gives AI coding agents structured access to a project's context: overview, coding conventions, security rules and features, plus a `check_code` tool that checks generated code against the team's rules.**
@@ -307,3 +308,11 @@ npm run build          # compile to dist/
 ```
 
 The tests call the server through an in-memory MCP client, as a client would, and pin the security behaviors (path traversal, limits, rule validation). CI runs every check above on Linux and Windows, with Node.js 22 and 24.
+
+## Author
+
+**Sabry Zammit** ([@sabrysty](https://github.com/sabrysty)) · [LinkedIn](https://www.linkedin.com/in/sabry-zammit-859596123/)
+
+## License
+
+[MIT](LICENSE)

@@ -32,7 +32,7 @@
     "agents",
     "context"
   ],
-  "author": "sabrysty",
+  "author": "Sabry Zammit (https://github.com/sabrysty)",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/server": "^2.3.0",
