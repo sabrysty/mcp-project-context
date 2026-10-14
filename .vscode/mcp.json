@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "project-context": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/dist/index.js",
+        "--context-dir",
+        "${workspaceFolder}/examples/taskflow-context"
+      ]
+    }
+  }
+}
