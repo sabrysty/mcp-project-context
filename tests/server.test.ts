@@ -9,7 +9,6 @@ import {
   DEMO_CONTEXT_DIR,
   resultOf,
   startTestServer,
-  textOf,
   type TestServer,
 } from './helpers/mcp-client.js';
 
@@ -38,7 +37,7 @@ describe('createServer', () => {
     // Claude Code cuts server instructions at 2,048 characters.
     expect(SERVER_INSTRUCTIONS.length).toBeLessThanOrEqual(2048);
     for (const name of [
-      ...tools.map((tool) => tool.name).filter((name) => name !== 'ping'),
+      ...tools.map((tool) => tool.name),
       'review-with-conventions',
       'explain-feature',
     ]) {
@@ -69,7 +68,6 @@ describe('createServer', () => {
     const tools = await test.client.listTools();
 
     expect(tools.map((tool) => tool.name)).toEqual([
-      'ping',
       'get_project_context',
       'list_features',
       'get_feature_doc',
@@ -122,13 +120,6 @@ describe('createServer', () => {
       type: 'object',
       required,
     });
-  });
-
-  it('answers pong to a ping call', async () => {
-    const result = await test.client.callTool('ping');
-
-    expect(textOf(result)).toBe('pong');
-    expect(result.isError).toBeUndefined();
   });
 });
 

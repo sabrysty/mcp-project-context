@@ -15,7 +15,6 @@ import { registerGetConventionsTool } from './tools/get-conventions.js';
 import { registerGetFeatureDocTool } from './tools/get-feature-doc.js';
 import { registerGetProjectContextTool } from './tools/get-project-context.js';
 import { registerListFeaturesTool } from './tools/list-features.js';
-import { registerPingTool } from './tools/ping.js';
 import { registerSearchDocsTool } from './tools/search-docs.js';
 
 export const SERVER_NAME = 'mcp-project-context';
@@ -41,7 +40,6 @@ export async function createServer({ config, logger }: ServerDependencies): Prom
   );
   const dependencies: HandlerDependencies = { context, logger };
 
-  registerPingTool(server);
   registerGetProjectContextTool(server, dependencies);
   registerListFeaturesTool(server, dependencies);
   registerGetFeatureDocTool(server, dependencies);
