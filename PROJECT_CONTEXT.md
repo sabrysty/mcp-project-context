@@ -317,7 +317,7 @@ Réaliser **une étape à la fois**, selon ce flux de travail (GitHub Flow) :
 
 Étapes :
 
-1. **Init** : `package.json`, `tsconfig`, ESLint, Prettier, Vitest, `.gitignore`, structure des dossiers, logger, config. Le serveur démarre avec un tool `ping`.
+1. **Init** : `package.json`, `tsconfig`, ESLint, Prettier, Vitest, `.gitignore`, structure des dossiers, logger, config. Le serveur démarre avec un tool `ping` (retiré à l'étape 10).
 2. **Données de démo** : créer `examples/taskflow-context/` complet.
 3. **Lecture du contexte** : `safe-path`, `loader` + tests.
 4. **Tools de lecture** : `get_project_context`, `list_features`, `get_feature_doc`, `get_conventions` + tests.
@@ -349,13 +349,13 @@ Le README est la vitrine du projet. Il doit contenir :
 
 ## 13. Definition of Done (V1)
 
-- [ ] `npm run build`, `npm run lint`, `npm run typecheck` et `npm test` passent sans erreur
-- [ ] Les 6 tools, les resources et les 2 prompts fonctionnent dans MCP Inspector
-- [ ] Le serveur est testé en conditions réelles depuis au moins un client (Claude Code ou Cursor)
-- [ ] Les tests de sécurité (path traversal, limites) passent
-- [ ] CI verte sur GitHub
-- [ ] README complet avec schéma et démo
-- [ ] Aucun secret ni `console.log` dans le code
+- [x] `npm run build`, `npm run lint`, `npm run typecheck` et `npm test` passent sans erreur
+- [x] Les 6 tools, les resources et les 2 prompts fonctionnent dans MCP Inspector
+- [x] Le serveur est testé en conditions réelles depuis au moins un client (Claude Code ou Cursor)
+- [x] Les tests de sécurité (path traversal, limites) passent
+- [x] CI verte sur GitHub
+- [x] README complet avec schéma et démo
+- [x] Aucun secret ni `console.log` dans le code
 
 ---
 
