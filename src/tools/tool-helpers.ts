@@ -1,13 +1,9 @@
 import type { CallToolResult } from '@modelcontextprotocol/server';
 
 import { ContextError } from '../context/errors.js';
-import type { ProjectContext } from '../context/project-context.js';
 import type { Logger } from '../logger.js';
 
-export interface ToolDependencies {
-  context: ProjectContext;
-  logger: Logger;
-}
+export type { HandlerDependencies } from '../handler-helpers.js';
 
 /** Longest feature name or convention topic a tool accepts. */
 export const MAX_NAME_LENGTH = 200;

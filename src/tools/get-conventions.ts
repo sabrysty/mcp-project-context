@@ -10,7 +10,7 @@ import {
   READ_ONLY_ANNOTATIONS,
   runTool,
   textResult,
-  type ToolDependencies,
+  type HandlerDependencies,
 } from './tool-helpers.js';
 
 export const GET_CONVENTIONS_TOOL = 'get_conventions';
@@ -74,7 +74,7 @@ async function listConventionTopics(context: ProjectContext): Promise<CallToolRe
 
 export function registerGetConventionsTool(
   server: McpServer,
-  { context, logger }: ToolDependencies,
+  { context, logger }: HandlerDependencies,
 ): void {
   server.registerTool(
     GET_CONVENTIONS_TOOL,

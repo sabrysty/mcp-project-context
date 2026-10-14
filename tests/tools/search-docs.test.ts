@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createFixtureDir, removeFixtureDir } from '../helpers/fixture-dir.js';
 import {
   DEMO_CONTEXT_DIR,
+  resultOf,
   startTestServer,
   textOf,
   type TestServer,
@@ -10,7 +11,7 @@ import {
 
 interface SearchOutput {
   terms: string[];
-  results: { source: string; section: string; excerpt: string; readWith?: string }[];
+  results: { source: string; section: string; excerpt: string; readWith: string }[];
   note?: string;
   skipped: { path: string }[];
 }
@@ -69,14 +70,26 @@ describe('search_docs', () => {
     });
   });
 
-  it('searches the security guidelines too, which no tool reads whole', async () => {
-    const { output } = await search({ query: 'securite IDOR' });
+  it('points to the resource of a document that no tool reads whole', async () => {
+    const { output, text } = await search({ query: 'securite IDOR' });
 
-    expect(output.results[0]?.source).toBe('security/guidelines.md');
-    expect(output.results[0]?.section).toBe(
-      "Règles de sécurité › Règles vérifiées en revue de code › Contrôle d'accès (IDOR)",
-    );
-    expect(output.results[0]?.readWith).toBeUndefined();
+    expect(output.results[0]).toMatchObject({
+      source: 'security/guidelines.md',
+      section: "Règles de sécurité › Règles vérifiées en revue de code › Contrôle d'accès (IDOR)",
+      readWith: 'resource context://security/guidelines',
+    });
+    expect(text).toContain('Whole document: resource context://security/guidelines');
+  });
+
+  it('gives a resource that can actually be read', async () => {
+    const { output } = await search({ query: 'securite IDOR' });
+    const uri = output.results[0]?.readWith.replace(/^resource /, '');
+
+    const response = await demo.client.request('resources/read', { uri });
+
+    expect(resultOf(response)).toMatchObject({
+      contents: [{ uri: 'context://security/guidelines', mimeType: 'text/markdown' }],
+    });
   });
 
   // Cases reported while testing the server from Claude Code (step 5 review).

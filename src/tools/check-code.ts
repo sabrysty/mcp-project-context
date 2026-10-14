@@ -9,7 +9,7 @@ import {
   errorResult,
   READ_ONLY_ANNOTATIONS,
   runTool,
-  type ToolDependencies,
+  type HandlerDependencies,
 } from './tool-helpers.js';
 
 export const CHECK_CODE_TOOL = 'check_code';
@@ -113,13 +113,13 @@ function formatCheck({
   return joinSections([summary, ...violations.map(formatViolation)].join('\n'), truncation, note);
 }
 
-function formatViolation({ rule, severity, line, column, message, fix }: Violation): string {
+export function formatViolation({ rule, severity, line, column, message, fix }: Violation): string {
   return `- Line ${String(line)}, column ${String(column)} — ${severity} ${rule}: ${message}\n  Fix: ${fix}`;
 }
 
 export function registerCheckCodeTool(
   server: McpServer,
-  { context, logger }: ToolDependencies,
+  { context, logger }: HandlerDependencies,
 ): void {
   server.registerTool(
     CHECK_CODE_TOOL,
