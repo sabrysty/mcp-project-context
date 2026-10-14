@@ -27,8 +27,8 @@ describe('list_features', () => {
       expect(textOf(result)).toBe(
         [
           '2 documented features:',
-          '- authentication: Authentification (tags: auth, jwt, nestjs; updated 2026-10-01)',
-          '- task-management: Gestion des tâches (tags: tasks, kanban, workspace, nestjs, react, typeorm; updated 2026-09-26)',
+          '- authentication: Authentification (tags: auth, jwt, nestjs; updated 2026-10-13)',
+          '- task-management: Gestion des tâches (tags: tasks, kanban, workspace, nestjs, react, typeorm; updated 2026-10-13)',
           '',
           'Read one with get_feature_doc, passing its name.',
         ].join('\n'),
@@ -45,14 +45,14 @@ describe('list_features', () => {
             title: 'Authentification',
             tags: ['auth', 'jwt', 'nestjs'],
             owner: 'équipe back',
-            updated: '2026-10-01',
+            updated: '2026-10-13',
           },
           {
             name: 'task-management',
             title: 'Gestion des tâches',
             tags: ['tasks', 'kanban', 'workspace', 'nestjs', 'react', 'typeorm'],
             owner: 'équipe produit',
-            updated: '2026-09-26',
+            updated: '2026-10-13',
           },
         ],
         skipped: [],

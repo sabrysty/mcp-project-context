@@ -2,7 +2,7 @@
 title: Gestion des tâches
 tags: [tasks, kanban, workspace, nestjs, react, typeorm]
 owner: équipe produit
-updated: 2026-09-26
+updated: 2026-10-13
 ---
 
 # Gestion des tâches
@@ -43,6 +43,17 @@ Statuts et priorités sont définis une seule fois, dans `@taskflow/shared` (`TA
 - Une tâche archivée disparaît des listes et ne peut plus être modifiée, sauf restauration. Elle reste restaurable 90 jours, puis un job planifié la purge.
 - L'assigné doit être membre du workspace de la tâche.
 
+### Archivage et restauration
+
+`DELETE /tasks/:taskId` suit cet ordre :
+
+1. Charger la tâche avec son workspace, archivée ou non. Introuvable : `404`.
+2. Vérifier le droit (auteur, admin ou owner). Sinon : `403`, même si la tâche est déjà archivée.
+3. Tâche déjà archivée : répondre `204` sans rien changer. `archivedAt` garde sa date d'origine, pour ne pas repousser la purge.
+4. Sinon, renseigner `archivedAt` (UTC) et répondre `204`.
+
+Archiver est donc **idempotent**, comme doit l'être un `DELETE` : un double clic ou une requête rejouée après une coupure réseau ne produit pas d'erreur. De même, restaurer une tâche qui n'est pas archivée la renvoie telle quelle (`200`) ; une tâche purgée n'existe plus (`404`).
+
 ## Endpoints
 
 Préfixe : `/api/v1/workspaces/:workspaceId`. Toutes les routes exigent d'être authentifié **et** membre du workspace (`WorkspaceMemberGuard`).
@@ -59,11 +70,12 @@ Préfixe : `/api/v1/workspaces/:workspaceId`. Toutes les routes exigent d'être 
 
 Filtres de `GET /tasks` : `status`, `priority`, `assigneeId`, `q` (recherche dans le titre), `dueBefore`, `page` (1 par défaut), `limit` (20 par défaut, 100 au plus), `sort` (`position`, `dueDate`, `-createdAt`…).
 
-Codes d'erreur propres à la feature :
+Codes d'erreur propres à la feature. Le service lève l'erreur métier indiquée, définie dans `tasks/tasks.errors.ts`, et le filtre global la traduit en code HTTP (voir les [conventions NestJS](../conventions/nestjs.md#erreurs)) :
 
-- `404` : la tâche n'existe pas **ou** appartient à un autre workspace (son existence n'est pas révélée).
-- `409` : la `version` envoyée ne correspond plus, la tâche a été modifiée entre-temps.
-- `422` : règle métier non respectée, par exemple un assigné qui n'est pas membre du workspace.
+- `403` (`TaskActionForbiddenError`) : le membre n'a pas le droit de faire cette action, d'après les règles métier.
+- `404` (`TaskNotFoundError`) : la tâche n'existe pas **ou** appartient à un autre workspace (son existence n'est pas révélée).
+- `409` (`TaskVersionConflictError`) : la `version` envoyée ne correspond plus, la tâche a été modifiée entre-temps.
+- `422` (`AssigneeNotMemberError`…) : règle métier non respectée, par exemple un assigné qui n'est pas membre du workspace.
 
 Exemple de création :
 
@@ -102,6 +114,7 @@ Content-Type: application/json
 ## Points d'attention
 
 - **IDOR** : toujours charger une tâche avec son workspace (`where: { id: taskId, workspaceId }`). Le `workspaceId` vient de la route, validée par le guard, jamais du body.
+- **Rôle du membre** : lu dans `@CurrentMember()`, que `WorkspaceMemberGuard` charge en base à chaque requête, jamais dans le token (`@CurrentUser()` ne porte que l'`id`). Les droits « si auteur » ou « si assigné » des règles métier se vérifient dans le service, une fois la tâche chargée.
 - **Assigné** : vérifier qu'il est membre du même workspace, sinon `422`.
 - **Recherche `q`** : `ILIKE` paramétré via le QueryBuilder, en échappant les `%` et `_` saisis par l'utilisateur (`escapeLike`).
 - **Pagination** : `limit` plafonné à 100 dans le DTO.
@@ -112,7 +125,7 @@ Content-Type: application/json
 
 ## Tests à maintenir
 
-- e2e : création, lecture, modification et archivage ; filtres et pagination ; tâche d'un autre workspace → `404` ; assigné non membre → `422` ; conflit de version → `409` ; archivage puis restauration.
+- e2e : création, lecture, modification et archivage ; filtres et pagination ; tâche d'un autre workspace → `404` ; assigné non membre → `422` ; conflit de version → `409` ; archivage puis restauration ; archivage par un member qui n'est pas l'auteur → `403` ; nouvel archivage d'une tâche archivée → `204`, `archivedAt` inchangé.
 - Unitaires : calcul des positions, gestion de `completedAt` lors des changements de statut.
 - Front : glisser-déposer avec mise à jour optimiste et retour arrière en cas d'erreur (API simulée avec MSW).
 

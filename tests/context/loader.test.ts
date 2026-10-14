@@ -278,7 +278,7 @@ describe('demo context (examples/taskflow-context)', () => {
       title: 'Authentification',
       tags: ['auth', 'jwt', 'nestjs'],
       owner: 'équipe back',
-      updated: '2026-10-01',
+      updated: '2026-10-13',
     });
   });
 

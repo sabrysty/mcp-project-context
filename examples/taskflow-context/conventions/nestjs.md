@@ -2,7 +2,7 @@
 title: Conventions NestJS
 tags: [nestjs, backend, dto, validation, config, logger, typeorm]
 owner: équipe back
-updated: 2026-09-24
+updated: 2026-10-13
 ---
 
 # Conventions NestJS (`apps/api`)
@@ -20,8 +20,8 @@ apps/api/src/
 ├── config/
 │   └── env.schema.ts         # Validation des variables d'environnement
 ├── common/
-│   ├── decorators/           # @Public(), @CurrentUser(), @Roles()
-│   ├── filters/              # Filtre d'exceptions global
+│   ├── decorators/           # @Public(), @CurrentUser(), @CurrentMember(), @Roles()
+│   ├── filters/              # DomainExceptionFilter : erreurs métier → réponses HTTP
 │   └── guards/               # JwtAuthGuard, WorkspaceMemberGuard, RolesGuard
 ├── database/
 │   └── migrations/
@@ -30,6 +30,7 @@ apps/api/src/
     ├── tasks.controller.ts
     ├── tasks.service.ts
     ├── tasks.service.spec.ts
+    ├── tasks.errors.ts       # Erreurs métier du module
     ├── dto/
     │   ├── create-task.dto.ts
     │   ├── update-task.dto.ts
@@ -138,8 +139,29 @@ this.logger.warn(`Task ${taskId} archived by a non-creator (user ${userId})`);
 
 ## Erreurs
 
-- Côté HTTP : les exceptions intégrées de Nest (`NotFoundException`, `ConflictException`, `ForbiddenException`…).
-- Les services lèvent des erreurs métier (`TaskNotFoundError`…) ; le filtre global `DomainExceptionFilter` les traduit en réponses HTTP.
+- Un service ne connaît pas HTTP : il ne lève jamais d'exception de Nest (`NotFoundException`…), seulement des **erreurs métier**. Le filtre global `DomainExceptionFilter` les traduit en réponses HTTP.
+- Les exceptions intégrées de Nest restent réservées aux contrôleurs, guards et pipes.
+- Chaque erreur métier étend l'une des classes de base de `packages/shared/src/errors.ts`, toutes dérivées de `DomainError`. C'est cette classe qui fixe le code HTTP :
+
+| Classe de base      | HTTP | Quand                                                               | Exemples                                            |
+| ------------------- | ---- | ------------------------------------------------------------------- | --------------------------------------------------- |
+| `NotFoundError`     | 404  | La ressource n'existe pas, ou appartient à un autre workspace       | `TaskNotFoundError`                                 |
+| `ForbiddenError`    | 403  | Le membre n'a pas le droit de faire cette action                    | `TaskActionForbiddenError`                          |
+| `ConflictError`     | 409  | L'état a changé entre-temps, ou une valeur unique est déjà utilisée | `TaskVersionConflictError`, `EmailAlreadyUsedError` |
+| `BusinessRuleError` | 422  | Règle métier non respectée                                          | `AssigneeNotMemberError`                            |
+
+- Toute autre erreur devient une `500` : le filtre la journalise (niveau `error`, avec le `requestId`) et ne renvoie qu'un message générique.
+- Les erreurs d'un module sont rangées dans `<module>/<module>.errors.ts` : `tasks/tasks.errors.ts`. Leur message est renvoyé au client : en anglais, sans donnée sensible.
+
+```ts
+// tasks/tasks.errors.ts
+export class TaskActionForbiddenError extends ForbiddenError {
+  constructor(taskId: string, action: 'edit' | 'archive' | 'restore') {
+    super(`Not allowed to ${action} task ${taskId}`);
+  }
+}
+```
+
 - Format de réponse unique : `{ statusCode, error, message, requestId }`. Jamais de stack trace renvoyée au client.
 
 ## Accès aux données (TypeORM)
@@ -169,8 +191,29 @@ const tasks = await this.dataSource.query("SELECT * FROM tasks WHERE title LIKE 
 ## Authentification et autorisation
 
 - `JwtAuthGuard` est global : toute route est protégée par défaut, les routes publiques portent `@Public()`.
-- L'utilisateur courant s'obtient avec `@CurrentUser()`, jamais en lisant un identifiant dans le body.
-- L'appartenance au workspace est vérifiée par `WorkspaceMemberGuard`, les rôles par `@Roles('admin', 'owner')`.
+- L'utilisateur courant s'obtient avec `@CurrentUser()`, jamais en lisant un identifiant dans le body. Il ne porte que son `id` (`AuthenticatedUser`) : le token ne contient aucun rôle.
+- `WorkspaceMemberGuard` vérifie que l'utilisateur est membre du workspace de la route. Il charge pour cela, en base et à chaque requête, son appartenance au workspace, que les contrôleurs obtiennent avec `@CurrentMember()` : `WorkspaceMember`, soit `{ userId, workspaceId, role }`.
+- **Le rôle se lit dans `@CurrentMember()`, jamais dans le token** : un même utilisateur peut être admin d'un workspace et simple member d'un autre, et son rôle peut changer à tout moment.
+- Un droit qui ne dépend que du rôle (gérer les membres) se déclare sur la route : `@Roles('admin', 'owner')`, vérifié par `RolesGuard`.
+- Un droit qui dépend aussi de la ressource (« si auteur ») se vérifie dans le service, une fois la ressource chargée : le contrôleur lui passe le `WorkspaceMember`.
+
+```ts
+// ✅ le service reçoit l'appartenance chargée par le guard : workspace et rôle compris
+@Delete(':taskId')
+@HttpCode(204)
+async archive(
+  @Param('taskId', ParseUUIDPipe) taskId: string,
+  @CurrentMember() member: WorkspaceMember,
+): Promise<void> {
+  await this.tasksService.archive(member, taskId);
+}
+```
+
+```ts
+// ❌ rôle lu sur l'utilisateur du token : il n'en a pas, et un rôle dépend du workspace
+await this.tasksService.archive(workspaceId, taskId, user.id, user.role);
+```
+
 - Détails : [authentification](../features/authentication.md).
 
 ## Tests

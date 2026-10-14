@@ -24,7 +24,7 @@ describe('get_project_context', () => {
 
     expect(result.isError).toBeUndefined();
     expect(textOf(result)).toMatch(
-      /^---\ntitle: TaskFlow — Contexte du projet\nsource: project\.md\nowner: tech lead\nupdated: 2026-09-30\ntags: \[overview, architecture, /,
+      /^---\ntitle: TaskFlow — Contexte du projet\nsource: project\.md\nowner: tech lead\nupdated: 2026-10-13\ntags: \[overview, architecture, /,
     );
     expect(textOf(result)).toContain('## Architecture');
   });
