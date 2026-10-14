@@ -10,7 +10,8 @@ import { SEARCH_DOCS_TOOL } from './tools/search-docs.js';
 /**
  * Sent to the client at initialization. Some clients, such as Claude Code with tool search,
  * only show the agent the tool names and these instructions until it looks a tool up: they
- * tell it when to reach for this server. Claude Code cuts them at 2,048 characters.
+ * tell it when to reach for this server. Claude Code cuts them at 4,096 characters, and
+ * versions before 2.1.296 at 2,048: they stay under the lower limit.
  */
 export const SERVER_INSTRUCTIONS = [
   'Context of the software project you are working on, written by its team: overview, ' +

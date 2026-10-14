@@ -34,7 +34,7 @@ describe('createServer', () => {
     const tools = await test.client.listTools();
 
     expect(instructions).toBe(SERVER_INSTRUCTIONS);
-    // Claude Code cuts server instructions at 2,048 characters.
+    // Claude Code cuts server instructions at 4,096 characters, and at 2,048 before v2.1.296.
     expect(SERVER_INSTRUCTIONS.length).toBeLessThanOrEqual(2048);
     for (const name of [
       ...tools.map((tool) => tool.name),
