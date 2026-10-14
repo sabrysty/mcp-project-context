@@ -21,19 +21,6 @@ export function documentBlock({ path, title, content }: ContextDocument): string
   ].join('\n');
 }
 
-/**
- * Fences code with more backticks than its longest run of backticks, so that the code
- * cannot close the fence and pass itself off as instructions.
- */
-export function fence(code: string, language = ''): string {
-  const longestRun = (code.match(/`+/g) ?? []).reduce(
-    (longest, run) => Math.max(longest, run.length),
-    0,
-  );
-  const marker = '`'.repeat(Math.max(3, longestRun + 1));
-  return `${marker}${language}\n${code}\n${marker}`;
-}
-
 /** Loads a document that a project may not have, such as project.md. */
 export async function loadIfPresent(
   loading: Promise<ContextDocument>,

@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createLogger } from '../src/logger.js';
 import { InvalidRulesError } from '../src/security/rules.js';
 import { createServer, SERVER_NAME } from '../src/server.js';
+import { SERVER_INSTRUCTIONS } from '../src/server-instructions.js';
 import { createFixtureDir, removeFixtureDir } from './helpers/fixture-dir.js';
 import {
   DEMO_CONTEXT_DIR,
@@ -27,6 +28,22 @@ describe('createServer', () => {
     expect(test.initializeResponse).toMatchObject({
       result: { serverInfo: { name: SERVER_NAME } },
     });
+  });
+
+  it('sends instructions that tell the agent when to use each tool and prompt', async () => {
+    const { instructions } = (resultOf(test.initializeResponse) ?? {}) as { instructions?: string };
+    const tools = await test.client.listTools();
+
+    expect(instructions).toBe(SERVER_INSTRUCTIONS);
+    // Claude Code cuts server instructions at 2,048 characters.
+    expect(SERVER_INSTRUCTIONS.length).toBeLessThanOrEqual(2048);
+    for (const name of [
+      ...tools.map((tool) => tool.name).filter((name) => name !== 'ping'),
+      'review-with-conventions',
+      'explain-feature',
+    ]) {
+      expect(SERVER_INSTRUCTIONS).toContain(name);
+    }
   });
 
   it('declares tools, resources, prompts and completions', () => {

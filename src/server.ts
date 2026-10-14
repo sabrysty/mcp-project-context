@@ -9,6 +9,7 @@ import { registerExplainFeaturePrompt } from './prompts/explain-feature.js';
 import { registerReviewWithConventionsPrompt } from './prompts/review-with-conventions.js';
 import { registerContextDocumentResources } from './resources/context-documents.js';
 import { loadRules } from './security/rules.js';
+import { SERVER_INSTRUCTIONS } from './server-instructions.js';
 import { registerCheckCodeTool } from './tools/check-code.js';
 import { registerGetConventionsTool } from './tools/get-conventions.js';
 import { registerGetFeatureDocTool } from './tools/get-feature-doc.js';
@@ -34,7 +35,10 @@ export async function createServer({ config, logger }: ServerDependencies): Prom
   const context = new ProjectContext(new ContextLoader({ rootDir: config.contextDir }));
   await checkRulesAtStartup(context, logger);
 
-  const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });
+  const server = new McpServer(
+    { name: SERVER_NAME, version: SERVER_VERSION },
+    { instructions: SERVER_INSTRUCTIONS },
+  );
   const dependencies: HandlerDependencies = { context, logger };
 
   registerPingTool(server);

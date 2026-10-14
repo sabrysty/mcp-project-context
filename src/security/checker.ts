@@ -27,13 +27,12 @@ export interface CheckReport {
 }
 
 /**
- * Matches the rules that apply to `language` against `code`, or every rule when the
- * language is unknown. The code is only read as text, never executed. A match that spans
- * several lines is reported where it starts.
+ * Matches the rules that apply to `language` against `code`. The code is only read as
+ * text, never executed. A match that spans several lines is reported where it starts.
  */
 export function findViolations(
   code: string,
-  language: Language | undefined,
+  language: Language,
   rules: readonly SecurityRule[],
 ): CheckReport {
   if (code.length > MAX_CODE_LENGTH) {
@@ -43,11 +42,7 @@ export function findViolations(
   }
   const text = code.replace(/\r\n?/g, '\n');
   const lineStarts = findLineStarts(text);
-  // Better a possible false positive than a rule skipped on code it was written for.
-  const applicable =
-    language === undefined
-      ? rules
-      : rules.filter((rule) => rule.languages?.includes(language) ?? true);
+  const applicable = rules.filter((rule) => rule.languages?.includes(language) ?? true);
 
   const violations = applicable.flatMap((rule) =>
     // matchAll works on a copy of the RegExp: the lastIndex of the rule never changes.
