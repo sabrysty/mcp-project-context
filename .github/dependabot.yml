@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # Keeps the actions pinned by commit SHA in the workflows up to date (SHA and version comment).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    # Waits a week before proposing a new release: a compromised release is usually caught and pulled within days.
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ['*']
+    commit-message:
+      prefix: ci

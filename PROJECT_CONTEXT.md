@@ -47,7 +47,7 @@ La qualité du code et du README compte autant que les fonctionnalités : un rec
 | Tests            | **Vitest**                                          |                                                          |
 | Dev              | `tsx` pour lancer en dev, `tsc` pour builder        |                                                          |
 | Qualité          | ESLint + Prettier                                   |                                                          |
-| CI               | GitHub Actions : lint + typecheck + tests           |                                                          |
+| CI               | GitHub Actions : lint + typecheck + tests           | + format, couverture, build ; Linux/Windows, Node 22/24  |
 | Transport        | **stdio** (V1). Streamable HTTP en option plus tard |                                                          |
 
 ---
