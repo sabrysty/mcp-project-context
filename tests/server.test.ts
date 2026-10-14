@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createLogger } from '../src/logger.js';
@@ -23,9 +25,12 @@ describe('createServer', () => {
     await test.server.close();
   });
 
-  it('identifies itself during initialization', () => {
+  it('identifies itself during initialization, with the version of package.json', async () => {
+    const packageJson = await readFile(new URL('../package.json', import.meta.url), 'utf8');
+    const { version } = JSON.parse(packageJson) as { version: string };
+
     expect(test.initializeResponse).toMatchObject({
-      result: { serverInfo: { name: SERVER_NAME } },
+      result: { serverInfo: { name: SERVER_NAME, version } },
     });
   });
 
