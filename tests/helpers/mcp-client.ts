@@ -95,7 +95,7 @@ export interface TestServer {
 
 /** Starts a server reading `contextDir` and returns a client that has completed initialization. */
 export async function startTestServer(contextDir: string): Promise<TestServer> {
-  const server = createServer({
+  const server = await createServer({
     config: { contextDir, logLevel: 'error' },
     logger: createLogger('error', () => undefined),
   });

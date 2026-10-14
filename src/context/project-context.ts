@@ -4,6 +4,7 @@ import { parseQuery, searchDocuments, type SearchResult } from './search.js';
 export const PROJECT_FILE = 'project.md';
 export const FEATURES_FOLDER = 'features';
 export const CONVENTIONS_FOLDER = 'conventions';
+export const RULES_FILE = 'security/rules.json';
 
 /** A document of a collection (features, conventions) with the name used to fetch it. */
 export interface NamedDocument {
@@ -53,6 +54,11 @@ export class ProjectContext {
 
   getConvention(topic: string): Promise<ContextDocument> {
     return this.getEntry(CONVENTIONS_FOLDER, topic);
+  }
+
+  /** Text of the security rules checked by check_code (PROJECT_CONTEXT.md §5.3). */
+  readRules(): Promise<string> {
+    return this.loader.readText(RULES_FILE);
   }
 
   /** Full-text search across every Markdown document of the context. */

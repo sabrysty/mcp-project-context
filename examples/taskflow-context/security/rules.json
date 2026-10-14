@@ -2,14 +2,14 @@
   {
     "id": "no-eval",
     "severity": "error",
-    "pattern": "\\beval\\s*\\(",
-    "message": "Usage de eval() interdit",
+    "pattern": "\\beval\\s*\\(|\\bnew\\s+Function\\s*\\(",
+    "message": "Usage de eval() ou new Function() interdit",
     "fix": "Utiliser JSON.parse ou une logique explicite"
   },
   {
     "id": "no-hardcoded-secret",
     "severity": "error",
-    "pattern": "(api[_-]?key|secret|password|token)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]",
+    "pattern": "\\b\\w*?(?:api[_-]?key|private[_-]?key|access[_-]?key|secret|passw(?:or)?d|token)(?:[_-]?key)?['\"]?(?:\\s*:\\s*[\\w$.<>[\\]|&, \\t]{1,100}?\\s*=|\\s*[:=])\\s*(?:'[^'\\s]{8,}'|\"[^\"\\s]{8,}\"|`[^`\\s$]{8,}`)",
     "flags": "i",
     "message": "Secret potentiellement codé en dur",
     "fix": "Passer par une variable d'environnement (ConfigService)"
@@ -17,9 +17,9 @@
   {
     "id": "no-sql-concat",
     "severity": "error",
-    "pattern": "(SELECT|INSERT|UPDATE|DELETE)[^;]*['\"]\\s*\\+",
+    "pattern": "\\b(?:SELECT\\s+(?:\\*|DISTINCT\\b|COUNT\\s*\\(|[\\w.\"`]+\\s*(?:,|FROM\\b|AS\\b))|INSERT\\s+INTO\\b|UPDATE\\s+[\\w.\"`]+\\s+SET\\b|DELETE\\s+FROM\\b)[^;]{0,1000}?['\"`]\\s*\\+(?!\\s*['\"`])|(?<![\\w$])`[^`]{0,1000}?\\b(?:SELECT\\s+(?:\\*|DISTINCT\\b|COUNT\\s*\\(|[\\w.\"`]+\\s*(?:,|FROM\\b|AS\\b))|INSERT\\s+INTO\\b|UPDATE\\s+[\\w.\"`]+\\s+SET\\b|DELETE\\s+FROM\\b)[^`]{0,1000}?\\$\\{",
     "flags": "i",
-    "message": "Requête SQL construite par concaténation (risque d'injection)",
+    "message": "Requête SQL construite par concaténation ou interpolation (risque d'injection)",
     "fix": "Utiliser des requêtes paramétrées ou l'ORM"
   },
   {
@@ -27,7 +27,7 @@
     "severity": "warning",
     "pattern": "console\\.log\\(",
     "message": "console.log interdit en production",
-    "fix": "Utiliser le Logger de NestJS"
+    "fix": "Back : Logger de NestJS ; front : shared/lib/logger.ts"
   },
   {
     "id": "no-dangerously-set-html",
