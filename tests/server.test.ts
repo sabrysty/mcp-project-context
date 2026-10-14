@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createLogger } from '../src/logger.js';
@@ -9,7 +11,6 @@ import {
   DEMO_CONTEXT_DIR,
   resultOf,
   startTestServer,
-  textOf,
   type TestServer,
 } from './helpers/mcp-client.js';
 
@@ -24,9 +25,12 @@ describe('createServer', () => {
     await test.server.close();
   });
 
-  it('identifies itself during initialization', () => {
+  it('identifies itself during initialization, with the version of package.json', async () => {
+    const packageJson = await readFile(new URL('../package.json', import.meta.url), 'utf8');
+    const { version } = JSON.parse(packageJson) as { version: string };
+
     expect(test.initializeResponse).toMatchObject({
-      result: { serverInfo: { name: SERVER_NAME } },
+      result: { serverInfo: { name: SERVER_NAME, version } },
     });
   });
 
@@ -35,10 +39,10 @@ describe('createServer', () => {
     const tools = await test.client.listTools();
 
     expect(instructions).toBe(SERVER_INSTRUCTIONS);
-    // Claude Code cuts server instructions at 2,048 characters.
+    // Claude Code cuts server instructions at 4,096 characters, and at 2,048 before v2.1.296.
     expect(SERVER_INSTRUCTIONS.length).toBeLessThanOrEqual(2048);
     for (const name of [
-      ...tools.map((tool) => tool.name).filter((name) => name !== 'ping'),
+      ...tools.map((tool) => tool.name),
       'review-with-conventions',
       'explain-feature',
     ]) {
@@ -69,7 +73,6 @@ describe('createServer', () => {
     const tools = await test.client.listTools();
 
     expect(tools.map((tool) => tool.name)).toEqual([
-      'ping',
       'get_project_context',
       'list_features',
       'get_feature_doc',
@@ -122,13 +125,6 @@ describe('createServer', () => {
       type: 'object',
       required,
     });
-  });
-
-  it('answers pong to a ping call', async () => {
-    const result = await test.client.callTool('ping');
-
-    expect(textOf(result)).toBe('pong');
-    expect(result.isError).toBeUndefined();
   });
 });
 

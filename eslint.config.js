@@ -3,7 +3,8 @@ import prettier from 'eslint-config-prettier';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'node_modules'] },
+  // examples/demo holds deliberately flawed code, for check_code to find.
+  { ignores: ['dist', 'coverage', 'node_modules', 'examples/demo'] },
   eslint.configs.recommended,
   tseslint.configs.strictTypeChecked,
   {

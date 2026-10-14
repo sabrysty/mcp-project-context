@@ -1,6 +1,6 @@
 {
   "name": "mcp-project-context",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "MCP server giving AI coding agents structured access to a project's context: docs, conventions, security rules and features.",
   "type": "module",
   "main": "dist/index.js",
@@ -32,7 +32,7 @@
     "agents",
     "context"
   ],
-  "author": "sabrysty",
+  "author": "Sabry Zammit (https://github.com/sabrysty)",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/server": "^2.3.0",

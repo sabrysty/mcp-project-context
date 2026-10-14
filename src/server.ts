@@ -15,11 +15,10 @@ import { registerGetConventionsTool } from './tools/get-conventions.js';
 import { registerGetFeatureDocTool } from './tools/get-feature-doc.js';
 import { registerGetProjectContextTool } from './tools/get-project-context.js';
 import { registerListFeaturesTool } from './tools/list-features.js';
-import { registerPingTool } from './tools/ping.js';
 import { registerSearchDocsTool } from './tools/search-docs.js';
 
 export const SERVER_NAME = 'mcp-project-context';
-export const SERVER_VERSION = '0.1.0';
+export const SERVER_VERSION = '1.0.0';
 
 export interface ServerDependencies {
   config: Config;
@@ -41,7 +40,6 @@ export async function createServer({ config, logger }: ServerDependencies): Prom
   );
   const dependencies: HandlerDependencies = { context, logger };
 
-  registerPingTool(server);
   registerGetProjectContextTool(server, dependencies);
   registerListFeaturesTool(server, dependencies);
   registerGetFeatureDocTool(server, dependencies);
