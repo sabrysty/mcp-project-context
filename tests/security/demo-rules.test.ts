@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { ContextLoader } from '../../src/context/loader.js';
@@ -10,6 +13,10 @@ import {
   type SecurityRule,
 } from '../../src/security/rules.js';
 import { DEMO_CONTEXT_DIR } from '../helpers/mcp-client.js';
+
+const DEMO_FILE = fileURLToPath(
+  new URL('../../examples/demo/search-tasks.service.ts', import.meta.url),
+);
 
 // The rules shipped with the demo context, on code an agent could write. Cases marked
 // "missed before" or "flagged before" are the defects found in the rules of the
@@ -123,6 +130,20 @@ describe('demo security rules', () => {
       ).toEqual(['no-dangerously-set-html']);
       expect(rulesBrokenBy('<Markdown>{task.description}</Markdown>', 'tsx')).toEqual([]);
     });
+  });
+
+  // The README shows this result: the test keeps it true.
+  it('finds the violations the README shows in the demo file, and misses the same line', async () => {
+    const code = await readFile(DEMO_FILE, 'utf8');
+
+    const { violations } = findViolations(code, 'ts', rules);
+
+    expect(violations.map(({ rule, line, column }) => ({ rule, line, column }))).toEqual([
+      { rule: 'no-hardcoded-secret', line: 6, column: 7 },
+      { rule: 'no-console-log', line: 18, column: 5 },
+      // Line 21 goes on concatenating the query, but holds no SQL keyword: a regex limit.
+      { rule: 'no-sql-concat', line: 20, column: 17 },
+    ]);
   });
 
   describe('on the code examples of the demo documentation', () => {
