@@ -154,6 +154,7 @@ describe('check_code', () => {
         'security/rules.json': JSON.stringify([
           rule('no-var', String.raw`\bvar\s`),
           rule('no-inner-html', 'innerHTML', { severity: 'warning', languages: ['tsx', 'jsx'] }),
+          rule('no-unescaped-blade', String.raw`\{!!`, { languages: ['php'] }),
         ]),
       });
       test = await startTestServer(root);
@@ -177,6 +178,21 @@ describe('check_code', () => {
       expect(tsx.structuredContent).toMatchObject({
         rulesChecked: 2,
         violations: [{ rule: 'no-var' }, { rule: 'no-inner-html' }],
+      });
+    });
+
+    it('checks PHP, Blade templates included, with its own rules and the general ones', async () => {
+      const code = '<p>{!! $user->bio !!}</p>\n<?php var $legacy; ?>';
+
+      const result = await test.client.callTool('check_code', { code, language: 'php' });
+
+      expect(result.structuredContent).toMatchObject({
+        language: 'php',
+        rulesChecked: 2,
+        violations: [
+          { rule: 'no-unescaped-blade', line: 1 },
+          { rule: 'no-var', line: 2 },
+        ],
       });
     });
 

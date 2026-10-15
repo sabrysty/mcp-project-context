@@ -3,8 +3,11 @@ import * as z from 'zod/v4';
 import { ContextError, ContextNotFoundError } from '../context/errors.js';
 import { RULES_FILE, type ProjectContext } from '../context/project-context.js';
 
-/** Languages check_code accepts. A rule can be restricted to some of them. */
-export const LANGUAGES = ['ts', 'js', 'tsx', 'jsx'] as const;
+/**
+ * Languages check_code accepts. A rule can be restricted to some of them. `php` covers Blade
+ * templates too: they are PHP files, and a rule on Blade syntax only matches templates anyway.
+ */
+export const LANGUAGES = ['ts', 'js', 'tsx', 'jsx', 'php'] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 export const SEVERITIES = ['error', 'warning'] as const;

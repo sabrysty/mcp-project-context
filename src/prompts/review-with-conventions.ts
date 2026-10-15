@@ -107,10 +107,10 @@ function reviewInstructions(hasFiles: boolean): string {
   return [
     target,
     '',
-    `1. First run the ${CHECK_CODE_TOOL} tool on the code of each file written in TypeScript ` +
-      'or JavaScript (language ts, js, tsx or jsx), then confirm or dismiss each violation ' +
-      'it reports: its regular expressions can flag harmless code, such as a comment. Say ' +
-      'which code it could not check.',
+    `1. First run the ${CHECK_CODE_TOOL} tool on the code of each file written in TypeScript, ` +
+      'JavaScript or PHP (language ts, js, tsx, jsx or php, Blade templates included), then ' +
+      'confirm or dismiss each violation it reports: its regular expressions can flag ' +
+      'harmless code, such as a comment. Say which code it could not check.',
     '2. Then look for what such a check cannot see: access control, input validation, ' +
       'sensitive data in logs or responses, and every coding convention.',
     '3. For each problem, give the file and the line, the convention or rule it breaks ' +

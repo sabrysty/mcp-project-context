@@ -108,7 +108,7 @@ describe('createServer', () => {
     expect(inputOf('check_code')).toMatchObject({
       properties: {
         code: { type: 'string', minLength: 1, maxLength: 50_000 },
-        language: { enum: ['ts', 'js', 'tsx', 'jsx'] },
+        language: { enum: ['ts', 'js', 'tsx', 'jsx', 'php'] },
       },
       required: ['code', 'language'],
     });
