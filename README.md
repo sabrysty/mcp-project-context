@@ -95,9 +95,9 @@ Every tool is read-only (`readOnlyHint: true`, `openWorldHint: false`).
 | Tool                  | Input                                                                      | Returns                                                                                                                |
 | --------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `get_project_context` | —                                                                          | The project overview (`project.md`): domain, architecture, stack                                                       |
-| `list_features`       | —                                                                          | The documented features: name, title, tags, last update (structured)                                                   |
+| `list_features`       | —                                                                          | The documented features: name, title, tags, last update, length; large ones flagged (structured)                       |
 | `get_feature_doc`     | `name`                                                                     | The whole documentation of a feature: goal, flows, endpoints, points of attention                                      |
-| `get_conventions`     | `topic` (optional, e.g. `nestjs`)                                          | The conventions of a topic, or the list of topics                                                                      |
+| `get_conventions`     | `topic` (optional, e.g. `nestjs`)                                          | The conventions of a topic, or the list of topics, large ones flagged                                                  |
 | `search_docs`         | `query`, `limit` (1–20, default 5)                                         | The most relevant sections across the whole context, with their source and how to read the whole document (structured) |
 | `check_code`          | `code` (up to 50,000 characters), `language` (`ts` `js` `tsx` `jsx` `php`) | Every violation of `security/rules.json`: rule, severity, line, column, message, fix (structured)                      |
 
@@ -274,7 +274,7 @@ Each rule of `security/rules.json` is a regular expression applied to the code a
 
 - **Write each rule where an agent will look for it.** An agent writing a service reads the conventions of its stack; a rule stated only in a feature document may never reach it.
 - **State the non-obvious explicitly**, with a good and a bad example: where the role of a user comes from, how domain errors map to HTTP codes, what an idempotent operation returns.
-- **Keep documents focused.** VS Code saves a tool result of about 9 KB or more to a file that the agent reads in chunks.
+- **Keep documents focused.** One feature or topic per file, under 40,000 characters (about 10,000 tokens), with a heading per subject, since `search_docs` ranks and returns sections. The other tools return a document whole: Claude Code warns about a tool result from 10,000 tokens and saves one over 25,000 tokens or 50,000 characters to a file; VS Code saves a result of about 9 KB or more to a file that the agent reads in chunks. `list_features` and `get_conventions` flag larger documents; `project.md` is not checked, so keep it a short overview. On a generated 100-page documentation, a read cost about 3,000 tokens with 5-page files, 54,000 with a single file.
 
 ## Security
 
