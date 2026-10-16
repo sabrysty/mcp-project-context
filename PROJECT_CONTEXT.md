@@ -31,7 +31,7 @@ Ce projet est un **projet portfolio public**. Il doit démontrer :
 - la **sécurité appliquée à l'IA** (lecture seule, validation des entrées, anti path traversal) ;
 - des **fondamentaux de génie logiciel solides** : TypeScript strict, architecture claire, tests, CI, README de qualité.
 
-La qualité du code et du README compte autant que les fonctionnalités : un recruteur doit comprendre le projet en 2 minutes.
+La qualité du code et du README compte autant que les fonctionnalités : un lecteur doit comprendre le projet en 2 minutes.
 
 ---
 
@@ -367,4 +367,4 @@ Le README est la vitrine du projet. Il doit contenir :
 - **Ne jamais deviner une API** : vérifier la doc du SDK MCP v2 en cas de doute.
 - Demander avant d'ajouter une dépendance non listée en section 3.
 - Écrire les tests **en même temps** que le code, pas après.
-- Expliquer brièvement chaque choix technique non trivial, pour que le développeur puisse le défendre en entretien.
+- Expliquer brièvement chaque choix technique non trivial, pour qu'il soit compréhensible et défendable en revue.
