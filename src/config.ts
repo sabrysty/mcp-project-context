@@ -13,24 +13,28 @@ export interface Config {
   logLevel: 'debug' | 'info' | 'warn' | 'error';
 }
 
+/** The context folder when none is given, relative to the project folder. */
+export const DEFAULT_CONTEXT_DIR = 'docs/context';
+
 const rawConfigSchema = z.object({
   contextDir: z
-    .string({
-      error: 'Missing context folder: pass --context-dir <path> or set PROJECT_CONTEXT_DIR',
-    })
+    .string()
     .trim()
     .min(1, 'Context folder path must not be empty')
-    .max(4096, 'Context folder path is too long'),
+    .max(4096, 'Context folder path is too long')
+    .optional(),
   logLevel: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 });
 
 /**
  * Builds the configuration from CLI arguments and environment variables.
- * CLI arguments take precedence over the environment.
+ * CLI arguments take precedence over the environment; without either, the context folder is
+ * docs/context in the project folder.
  */
 export function loadConfig(
   argv: readonly string[] = process.argv.slice(2),
   env: NodeJS.ProcessEnv = process.env,
+  cwd: string = process.cwd(),
 ): Config {
   const { values } = parseCliArgs(argv);
 
@@ -42,10 +46,24 @@ export function loadConfig(
     throw new ConfigError(parsed.error.issues.map((issue) => issue.message).join('; '));
   }
 
-  const contextDir = resolve(parsed.data.contextDir);
-  assertIsDirectory(contextDir);
+  const given = parsed.data.contextDir;
+  // An absolute path is kept as it is; a relative one starts from the project folder.
+  const contextDir = resolve(projectFolder(env, cwd), given ?? DEFAULT_CONTEXT_DIR);
+  // A folder given explicitly must exist: a typo stops the server. The default one may not
+  // exist yet, in a project that is not documented: the tools then report it.
+  if (given !== undefined) assertIsDirectory(contextDir);
 
   return { contextDir, logLevel: parsed.data.logLevel };
+}
+
+/**
+ * The folder that relative paths start from. Claude Code gives the project root in
+ * CLAUDE_PROJECT_DIR, since the working directory of a server it starts is not guaranteed;
+ * without it, the working directory.
+ */
+function projectFolder(env: NodeJS.ProcessEnv, cwd: string): string {
+  const projectDir = env.CLAUDE_PROJECT_DIR?.trim();
+  return projectDir ? resolve(cwd, projectDir) : cwd;
 }
 
 function parseCliArgs(argv: readonly string[]) {
