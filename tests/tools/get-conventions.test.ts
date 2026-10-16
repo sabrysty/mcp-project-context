@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { formatLargeDocuments, LARGE_DOCUMENT_CHARACTERS } from '../../src/tools/format.js';
 import { createFixtureDir, removeFixtureDir } from '../helpers/fixture-dir.js';
 import {
   DEMO_CONTEXT_DIR,
@@ -75,6 +76,31 @@ describe('get_conventions', () => {
     expect(text).toContain('1 convention topic:\n- react: React');
     expect(text).toContain('Skipped 1 file that could not be loaded');
     expect(text).toContain('- conventions/broken.md: Invalid front-matter');
+    await test.server.close();
+    await removeFixtureDir(root);
+  });
+
+  it('flags a large topic, to search first and to split', async () => {
+    const largeBody = `# Laravel\n\n${'x'.repeat(LARGE_DOCUMENT_CHARACTERS)}`;
+    const root = await createFixtureDir({
+      'conventions/laravel.md': largeBody,
+      'conventions/tests.md': '# Tests',
+    });
+    const test = await startTestServer(root);
+
+    const text = textOf(await test.client.callTool('get_conventions'));
+
+    expect(text).toBe(
+      [
+        '2 convention topics:',
+        `- laravel: Laravel (large: ${String(largeBody.length)} characters)`,
+        '- tests: Tests',
+        '',
+        'Call get_conventions with one of these topics to read it.',
+        '',
+        formatLargeDocuments(['laravel'], 'for instance one per topic under conventions/'),
+      ].join('\n'),
+    );
     await test.server.close();
     await removeFixtureDir(root);
   });

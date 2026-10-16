@@ -4,9 +4,12 @@ import type { ContextDocument } from '../../src/context/loader.js';
 import {
   countOf,
   formatDocument,
+  formatLargeDocuments,
   formatNotFound,
   formatSkipped,
+  isLargeDocument,
   joinSections,
+  LARGE_DOCUMENT_CHARACTERS,
 } from '../../src/tools/format.js';
 
 const DOCUMENT: ContextDocument = {
@@ -65,6 +68,27 @@ describe('formatSkipped', () => {
     ).toBe(
       'Skipped 1 file that could not be loaded (fix them to make them available):\n' +
         '- features/broken.md: Invalid front-matter: ✖ bad → at tags',
+    );
+  });
+});
+
+describe('large documents', () => {
+  it('counts a document as large only beyond the limit', () => {
+    expect(LARGE_DOCUMENT_CHARACTERS).toBe(40_000);
+    expect(isLargeDocument(40_000)).toBe(false);
+    expect(isLargeDocument(40_001)).toBe(true);
+  });
+
+  it('returns nothing when no document is large', () => {
+    expect(formatLargeDocuments([], 'one per topic')).toBeUndefined();
+  });
+
+  it('names the large documents, how to read them and how to split them', () => {
+    expect(formatLargeDocuments(['billing', 'reporting'], 'one per part')).toBe(
+      '2 large documents, over 40000 characters (about 10000 tokens): billing, reporting. ' +
+        'Read whole, such a document takes a large part of your context: find the relevant ' +
+        'section with search_docs first. Suggest to the team to split it into smaller ' +
+        'documents, one per part.',
     );
   });
 });
