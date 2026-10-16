@@ -1,7 +1,12 @@
-import { realpath } from 'node:fs/promises';
+import { realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 
-import { ContextNotFoundError, hasErrorCode, PathTraversalError } from './errors.js';
+import {
+  ContextFolderMissingError,
+  ContextNotFoundError,
+  hasErrorCode,
+  PathTraversalError,
+} from './errors.js';
 
 export const MAX_RELATIVE_PATH_LENGTH = 256;
 
@@ -56,7 +61,7 @@ export async function resolveInsideRoot(rootDir: string, relativePath: string): 
   assertInside(rootDir, lexicalPath, `Path leaves the context folder: ${relativePath}`);
 
   // Lexically inside does not mean physically inside: a symbolic link can point anywhere.
-  const realRoot = await realpathOrNotFound(rootDir, 'Context folder not found');
+  const realRoot = await realRootOf(rootDir);
   const realTarget = await realpathOrNotFound(lexicalPath, `Not found: ${relativePath}`);
   assertInside(
     realRoot,
@@ -70,6 +75,21 @@ export async function resolveInsideRoot(rootDir: string, relativePath: string): 
 function assertInside(directory: string, candidate: string, message: string): void {
   if (!isInsideDirectory(directory, candidate)) {
     throw new PathTraversalError(message);
+  }
+}
+
+/**
+ * The real path of the context folder. A missing folder, or a file in its place, is not a
+ * missing document: the whole context is absent.
+ */
+async function realRootOf(rootDir: string): Promise<string> {
+  try {
+    const realRoot = await realpath(rootDir);
+    if (!(await stat(realRoot)).isDirectory()) throw new ContextFolderMissingError();
+    return realRoot;
+  } catch (error) {
+    if (hasErrorCode(error, 'ENOENT', 'ENOTDIR')) throw new ContextFolderMissingError();
+    throw error;
   }
 }
 

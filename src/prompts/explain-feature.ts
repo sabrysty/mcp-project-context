@@ -7,7 +7,11 @@ import {
 } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
 
-import { ContextNotFoundError, PathTraversalError } from '../context/errors.js';
+import {
+  ContextFolderMissingError,
+  ContextNotFoundError,
+  PathTraversalError,
+} from '../context/errors.js';
 import type { ContextDocument } from '../context/loader.js';
 import type { ProjectContext } from '../context/project-context.js';
 import { runRequest, type HandlerDependencies } from '../handler-helpers.js';
@@ -80,11 +84,16 @@ async function loadFeature(context: ProjectContext, name: string): Promise<Conte
 }
 
 async function completeFeatureNames(context: ProjectContext, prefix: string): Promise<string[]> {
-  const { entries } = await context.listFeatures();
+  let names: string[];
+  try {
+    names = (await context.listFeatures()).entries.map((entry) => entry.name);
+  } catch (error) {
+    // Nothing to suggest in a project without context folder.
+    if (error instanceof ContextFolderMissingError) return [];
+    throw error;
+  }
   const lowerPrefix = prefix.toLowerCase();
-  return entries
-    .map((entry) => entry.name)
-    .filter((name) => name.toLowerCase().startsWith(lowerPrefix));
+  return names.filter((name) => name.toLowerCase().startsWith(lowerPrefix));
 }
 
 export function registerExplainFeaturePrompt(
