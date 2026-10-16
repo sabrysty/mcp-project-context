@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { formatLargeDocuments, LARGE_DOCUMENT_CHARACTERS } from '../../src/tools/format.js';
 import { createFixtureDir, removeFixtureDir } from '../helpers/fixture-dir.js';
 import {
   DEMO_CONTEXT_DIR,
@@ -46,6 +47,7 @@ describe('list_features', () => {
             tags: ['auth', 'jwt', 'nestjs'],
             owner: 'équipe back',
             updated: '2026-10-13',
+            characters: expect.any(Number) as number,
           },
           {
             name: 'task-management',
@@ -53,10 +55,59 @@ describe('list_features', () => {
             tags: ['tasks', 'kanban', 'workspace', 'nestjs', 'react', 'typeorm'],
             owner: 'équipe produit',
             updated: '2026-10-13',
+            characters: expect.any(Number) as number,
           },
         ],
         skipped: [],
       });
+    });
+  });
+
+  describe('on a context with a large feature', () => {
+    // Front-matter and leading blank lines are not part of the document's length.
+    const largeBody = `# Reporting\n\n${'x'.repeat(LARGE_DOCUMENT_CHARACTERS)}\n`;
+    let root: string;
+    let test: TestServer;
+
+    beforeAll(async () => {
+      root = await createFixtureDir({
+        'features/authentication.md': '# Authentication',
+        'features/reporting.md': `---\ntitle: Reporting\n---\n\n${largeBody}`,
+      });
+      test = await startTestServer(root);
+    });
+
+    afterAll(async () => {
+      await test.server.close();
+      await removeFixtureDir(root);
+    });
+
+    it('gives the length of each feature and flags the large one', async () => {
+      const result = await test.client.callTool('list_features');
+      const text = textOf(result);
+
+      expect(text).toContain(
+        `- authentication: Authentication\n- reporting: Reporting (large: ${String(largeBody.length)} characters)\n`,
+      );
+      expect(result.structuredContent).toMatchObject({
+        features: [
+          { name: 'authentication', characters: '# Authentication'.length },
+          { name: 'reporting', characters: largeBody.length },
+        ],
+      });
+    });
+
+    it('advises searching the large feature and splitting it, in the text and the structure', async () => {
+      const result = await test.client.callTool('list_features');
+      const note = result.structuredContent?.note;
+
+      expect(note).toBe(
+        formatLargeDocuments(
+          ['reporting'],
+          'for instance one per part under features/<feature name>/',
+        ),
+      );
+      expect(textOf(result)).toContain(`\n\n${String(note)}`);
     });
   });
 
