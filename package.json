@@ -1,6 +1,6 @@
 {
   "name": "mcp-project-context",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "MCP server giving AI coding agents structured access to a project's context: docs, conventions, security rules and features.",
   "type": "module",
   "main": "dist/index.js",
