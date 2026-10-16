@@ -103,6 +103,8 @@ node dist/index.js --context-dir ./examples/taskflow-context
 PROJECT_CONTEXT_DIR=./examples/taskflow-context node dist/index.js
 ```
 
+Sans chemin, il lit `docs/context` dans le dossier du projet : Claude Code donne ce dossier dans `CLAUDE_PROJECT_DIR`, car le dossier de travail d'un serveur qu'il lance n'est pas garanti ; ailleurs, c'est le dossier de travail. Un chemin relatif part du même dossier. Un dossier passé explicitement doit exister ; le dossier par défaut peut manquer : le serveur démarre quand même et chaque outil le signale.
+
 Structure attendue du dossier de contexte :
 
 ```
@@ -383,10 +385,11 @@ L'ordre : rendre le serveur facile à installer, puis à adopter sur un nouveau 
 - **Contenu** : un ruleset GitHub sans exception : pull request obligatoire, les 4 jobs de la CI obligatoires, push forcé et suppression interdits. Pas d'approbation exigée : avec un seul mainteneur, l'auteur d'une PR ne peut pas l'approuver lui-même.
 - **Fin** : l'API `rules/branches/master` renvoie ces règles.
 
-### 15.1 Installation par npm (v1.3.0)
+### 15.1 Installation : une entrée pour tous les projets (v1.3.0), puis npm
 
-- **Pourquoi** : utiliser le serveur demande aujourd'hui de cloner le dépôt, de le compiler et d'indiquer un chemin absolu ; chaque projet dépend alors de l'état de ce clone.
-- **Contenu** :
+- **Pourquoi** : utiliser le serveur demandait de cloner le dépôt, de le compiler et d'indiquer deux chemins absolus par projet ; chaque projet dépendait alors de l'état de ce clone.
+- **Fait en v1.3.0** : le dossier `docs/context` du projet par défaut (`CLAUDE_PROJECT_DIR` sous Claude Code), un serveur qui démarre sans dossier et le signale à chaque appel, et une copie installée depuis un paquet local (`npm pack`) : une seule entrée Claude Code, en portée utilisateur, sert tous les projets.
+- **Reste** (issue #19) :
   - publication sur npm depuis la CI, à partir d'un tag, avec provenance (attestation signée que le paquet vient de ce dépôt), sans jeton npm stocké si la publication de confiance d'npm le permet (vérifier sa doc) ;
   - `npx -y mcp-project-context --context-dir <dossier>` dans la configuration des clients, avec une version majeure épinglée ;
   - une configuration par projet sans chemin absolu, vérifiée dans la doc de chaque client (variables comme `${workspaceFolder}`, racines MCP).
