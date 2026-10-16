@@ -368,3 +368,57 @@ Le README est la vitrine du projet. Il doit contenir :
 - Demander avant d'ajouter une dépendance non listée en section 3.
 - Écrire les tests **en même temps** que le code, pas après.
 - Expliquer brièvement chaque choix technique non trivial, pour qu'il soit compréhensible et défendable en revue.
+
+---
+
+## 15. Après la V1 : roadmap
+
+La V1 est terminée (v1.0.0). Depuis, la v1.1.0 a ajouté PHP à `check_code` et la v1.2.0 signale les documents trop gros. Chaque jalon ci-dessous suit le flux de travail de la section 11 : une issue, une branche et une pull request, avec validation humaine avant tout push.
+
+L'ordre : rendre le serveur facile à installer, puis à adopter sur un nouveau projet, ensuite améliorer ce que l'usage réel révèle, enfin le chantier lourd de l'analyse syntaxique.
+
+### 15.0 Protéger `master` (prérequis)
+
+- **Pourquoi** : la branche n'a aucune protection ; un outil qui utilise le jeton du mainteneur pourrait pousser directement dessus.
+- **Contenu** : un ruleset GitHub sans exception : pull request obligatoire, les 4 jobs de la CI obligatoires, push forcé et suppression interdits. Pas d'approbation exigée : avec un seul mainteneur, l'auteur d'une PR ne peut pas l'approuver lui-même.
+- **Fin** : l'API `rules/branches/master` renvoie ces règles.
+
+### 15.1 Installation par npm (v1.3.0)
+
+- **Pourquoi** : utiliser le serveur demande aujourd'hui de cloner le dépôt, de le compiler et d'indiquer un chemin absolu ; chaque projet dépend alors de l'état de ce clone.
+- **Contenu** :
+  - publication sur npm depuis la CI, à partir d'un tag, avec provenance (attestation signée que le paquet vient de ce dépôt), sans jeton npm stocké si la publication de confiance d'npm le permet (vérifier sa doc) ;
+  - `npx -y mcp-project-context --context-dir <dossier>` dans la configuration des clients, avec une version majeure épinglée ;
+  - une configuration par projet sans chemin absolu, vérifiée dans la doc de chaque client (variables comme `${workspaceFolder}`, racines MCP).
+- **Fin** : un projet neuf utilise le serveur avec une seule entrée de configuration, et la page npm affiche la provenance.
+
+### 15.2 Démarrer un nouveau projet (v1.4.0)
+
+- **Pourquoi** : écrire un dossier de contexte à partir de rien est le principal frein à l'adoption.
+- **Contenu** :
+  - `mcp-project-context init --stack <laravel|nestjs|nextjs>` crée le squelette `docs/context/` (vue d'ensemble, conventions, une feature d'exemple, règles de sécurité) et un `rules.json` de départ adapté à la stack ; il n'écrase jamais un fichier existant ;
+  - `mcp-project-context check [dossier]` vérifie le front-matter, `rules.json`, la taille des documents et les liens internes, et sort avec un code d'erreur pour la CI du projet documenté (exemple de workflow GitHub Actions dans le README) ;
+  - ces commandes sont lancées par un humain ou par la CI, **jamais exposées comme outils MCP** : le serveur reste en lecture seule.
+- **Fin** : `init` puis `check` passent sur un dépôt vide pour chaque stack ; les règles de départ sont testées comme celles de la démo (cas positifs et négatifs, pire cas de ReDoS mesuré).
+
+### 15.3 Ce que l'usage révèle (v1.5.0)
+
+- **Recherches sans résultat** : le serveur les compte dans son journal local. Elles montrent ce qui manque à la documentation ; or, quand la doc se tait, l'agent invente (constaté à l'étape 8).
+- **Documentation périmée** : un champ `sources` du front-matter liste les fichiers de code qu'un document décrit, et `check` signale un document dont ces fichiers ont changé après sa date `updated`. C'est `check` qui le fait, pas le serveur : le serveur ne lit que le dossier de contexte.
+
+### 15.4 `check_code` par analyse syntaxique (v2.0.0)
+
+- **Pourquoi** : les expressions régulières ont des limites connues et documentées : la ligne 21 de la démo concatène du texte à une requête SQL définie une ligne plus haut, et un commentaire peut être signalé à tort.
+- **Contenu** : analyser l'arbre syntaxique (par exemple avec tree-sitter, qui couvre TypeScript et PHP), pour ignorer commentaires et chaînes et suivre une valeur jusqu'à la requête qui l'utilise. Le format des règles peut changer, d'où une version majeure.
+- **Fin** : la ligne 21 de la démo est détectée, sans régression sur les cas de test existants.
+
+### 15.5 En continu : qualité et chaîne d'approvisionnement
+
+- CodeQL, OpenSSF Scorecard et zizmor dans la CI.
+- Tests de mutation (Stryker) sur `src/security`, tests par propriétés (fast-check) sur `safe-path`.
+
+### 15.6 Plus tard
+
+- Transport Streamable HTTP avec authentification, si un serveur partagé par une équipe est demandé.
+- Recherche sémantique par embeddings.
+- Exemples d'agents Claude Code qui utilisent le serveur (relecture, planification des tests), en lecture seule.
