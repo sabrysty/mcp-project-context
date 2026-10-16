@@ -16,6 +16,24 @@ export class ContextNotFoundError extends ContextError {
   override name = 'ContextNotFoundError';
 }
 
+export const CONTEXT_FOLDER_MISSING_MESSAGE =
+  'The context folder does not exist. By default it is the docs/context folder of the ' +
+  'project; another folder can be given to the server with --context-dir. Files are read on ' +
+  'every call: once the folder exists, no restart is needed.';
+
+/**
+ * The context folder itself is missing, unlike a document or a subfolder: the context is not
+ * empty, it is absent. The server still starts without its default folder, and every request
+ * reports it.
+ */
+export class ContextFolderMissingError extends ContextError {
+  override name = 'ContextFolderMissingError';
+
+  constructor() {
+    super(CONTEXT_FOLDER_MISSING_MESSAGE);
+  }
+}
+
 export class UnsupportedFileTypeError extends ContextError {
   override name = 'UnsupportedFileTypeError';
 }

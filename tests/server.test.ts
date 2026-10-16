@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -146,6 +147,19 @@ describe('createServer at startup', () => {
     await expect(start(root)).rejects.toThrow(InvalidRulesError);
     await expect(start(root)).rejects.toThrow('rule "no-eval" has an invalid pattern');
     await removeFixtureDir(root);
+  });
+
+  it('starts without context folder, and warns that every tool reports it', async () => {
+    const base = await createFixtureDir();
+    const logs: string[] = [];
+
+    const server = await start(path.join(base, 'docs', 'context'), logs);
+
+    expect(logs.join('\n')).toContain(
+      'WARN No context folder yet: every tool reports it until the folder exists',
+    );
+    await server.close();
+    await removeFixtureDir(base);
   });
 
   it('starts without security rules, and warns that check_code has none', async () => {

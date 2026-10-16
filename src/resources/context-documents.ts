@@ -8,7 +8,8 @@ import {
   type ReadResourceResult,
 } from '@modelcontextprotocol/server';
 
-import { ContextNotFoundError } from '../context/errors.js';
+import { ContextFolderMissingError, ContextNotFoundError } from '../context/errors.js';
+import type { DocumentListing } from '../context/loader.js';
 import {
   locateDocument,
   SECURITY_GUIDELINES_FILE,
@@ -37,7 +38,9 @@ async function listDocumentResources(
   context: ProjectContext,
   logger: Logger,
 ): Promise<ListResourcesResult> {
-  const { documents, skipped } = await context.listDocuments();
+  // Clients list the resources on their own, at connection: a project without context folder
+  // simply has none, and the tools explain why.
+  const { documents, skipped } = await listOrEmpty(context);
   // A resource list has no room to report them: the server log does.
   if (skipped.length > 0) {
     logger.warn('Documents left out of the resource list', { skipped });
@@ -108,8 +111,17 @@ function decodePath(uri: URL, path: string | string[] | undefined): string {
   );
 }
 
+async function listOrEmpty(context: ProjectContext): Promise<DocumentListing> {
+  try {
+    return await context.listDocuments();
+  } catch (error) {
+    if (error instanceof ContextFolderMissingError) return { documents: [], skipped: [] };
+    throw error;
+  }
+}
+
 async function completeDocumentPaths(context: ProjectContext, prefix: string): Promise<string[]> {
-  const { documents } = await context.listDocuments();
+  const { documents } = await listOrEmpty(context);
   const lowerPrefix = prefix.toLowerCase();
   return documents
     .map((document) => stripMarkdownExtension(document.path))

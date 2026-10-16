@@ -3,7 +3,11 @@ import path from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { ContextNotFoundError, PathTraversalError } from '../../src/context/errors.js';
+import {
+  ContextFolderMissingError,
+  ContextNotFoundError,
+  PathTraversalError,
+} from '../../src/context/errors.js';
 import {
   assertSafeRelativePath,
   isInsideDirectory,
@@ -139,9 +143,16 @@ describe('resolveInsideRoot', () => {
     );
   });
 
-  it('reports a missing context folder as not found', async () => {
-    await expect(resolveInsideRoot(path.join(base, 'missing'), 'project.md')).rejects.toThrow(
-      'Context folder not found',
+  it('reports a missing context folder as missing, not as a missing document', async () => {
+    const missing = resolveInsideRoot(path.join(base, 'missing'), 'project.md');
+
+    await expect(missing).rejects.toThrow(ContextFolderMissingError);
+    await expect(missing).rejects.not.toThrow(ContextNotFoundError);
+  });
+
+  it('reports a file in place of the context folder as a missing folder', async () => {
+    await expect(resolveInsideRoot(path.join(root, 'project.md'), '')).rejects.toThrow(
+      ContextFolderMissingError,
     );
   });
 

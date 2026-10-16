@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/server';
 
 import type { Config } from './config.js';
+import { ContextFolderMissingError } from './context/errors.js';
 import { ContextLoader } from './context/loader.js';
 import { ProjectContext, RULES_FILE } from './context/project-context.js';
 import type { HandlerDependencies } from './handler-helpers.js';
@@ -18,7 +19,7 @@ import { registerListFeaturesTool } from './tools/list-features.js';
 import { registerSearchDocsTool } from './tools/search-docs.js';
 
 export const SERVER_NAME = 'mcp-project-context';
-export const SERVER_VERSION = '1.2.0';
+export const SERVER_VERSION = '1.3.0';
 
 export interface ServerDependencies {
   config: Config;
@@ -32,7 +33,7 @@ export interface ServerDependencies {
  */
 export async function createServer({ config, logger }: ServerDependencies): Promise<McpServer> {
   const context = new ProjectContext(new ContextLoader({ rootDir: config.contextDir }));
-  await checkRulesAtStartup(context, logger);
+  await checkRulesAtStartup(context, logger, config.contextDir);
 
   const server = new McpServer(
     { name: SERVER_NAME, version: SERVER_VERSION },
@@ -56,9 +57,28 @@ export async function createServer({ config, logger }: ServerDependencies): Prom
   return server;
 }
 
-/** Fails fast on invalid rules (PROJECT_CONTEXT.md §5.3), instead of at the first check. */
-async function checkRulesAtStartup(context: ProjectContext, logger: Logger): Promise<void> {
-  const rules = await loadRules(context);
+/**
+ * Fails fast on invalid rules (PROJECT_CONTEXT.md §5.3), instead of at the first check. A
+ * missing context folder does not stop the server: configured once for every project, it
+ * starts in projects that are not documented yet, and its tools say so.
+ */
+async function checkRulesAtStartup(
+  context: ProjectContext,
+  logger: Logger,
+  contextDir: string,
+): Promise<void> {
+  let rules: Awaited<ReturnType<typeof loadRules>>;
+  try {
+    rules = await loadRules(context);
+  } catch (error) {
+    if (error instanceof ContextFolderMissingError) {
+      logger.warn('No context folder yet: every tool reports it until the folder exists', {
+        contextDir,
+      });
+      return;
+    }
+    throw error;
+  }
   if (rules === undefined) {
     logger.warn(`No ${RULES_FILE} in the context folder: check_code has no rule to apply`);
   } else {
