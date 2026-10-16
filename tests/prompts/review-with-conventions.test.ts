@@ -145,8 +145,9 @@ describe('review-with-conventions', () => {
       const text = await reviewText(demo, { files: FILES });
 
       expect(text).toContain(
-        '1. First run the check_code tool on the code of each file written in TypeScript or ' +
-          'JavaScript (language ts, js, tsx or jsx), then confirm or dismiss each violation',
+        '1. First run the check_code tool on the code of each file written in TypeScript, ' +
+          'JavaScript or PHP (language ts, js, tsx, jsx or php, Blade templates included), ' +
+          'then confirm or dismiss each violation',
       );
       expect(text).toContain('2. Then look for what such a check cannot see: access control');
     });

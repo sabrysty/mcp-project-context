@@ -31,7 +31,9 @@ const inputSchema = z.object({
       `Code is too long (max ${String(MAX_CODE_LENGTH)} characters): check it in smaller parts`,
     )
     .describe('Source code to check, from a few lines to a whole file. Read as text, never run.'),
-  language: z.enum(LANGUAGES).describe('Language of the code'),
+  language: z
+    .enum(LANGUAGES)
+    .describe('Language of the code; php for PHP files and Blade templates (.blade.php)'),
 });
 
 const outputSchema = z.object({

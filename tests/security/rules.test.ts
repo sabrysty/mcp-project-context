@@ -45,6 +45,12 @@ describe('parseRules', () => {
     expect(rule?.languages).toEqual(['tsx', 'jsx']);
   });
 
+  it('accepts rules restricted to PHP', () => {
+    const [rule] = parse([{ ...VALID_RULE, languages: ['php'] }]);
+
+    expect(rule?.languages).toEqual(['php']);
+  });
+
   it('accepts a file without rules', () => {
     expect(parse([])).toEqual([]);
   });

@@ -133,14 +133,14 @@ updated: 2026-10-01
 
 ### 5.2 Tools
 
-| Tool                  | Entrée                                                     | Sortie                                                                          | Rôle                                         |
-| --------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------- |
-| `get_project_context` | —                                                          | Contenu de `project.md`                                                         | Donner à l'agent la vue d'ensemble du projet |
-| `list_features`       | —                                                          | Liste des features (nom, titre, tags)                                           | Découvrir ce qui est documenté               |
-| `get_feature_doc`     | `name: string`                                             | Doc complète d'une feature                                                      | Comprendre une feature avant de la modifier  |
-| `get_conventions`     | `topic?: string` (ex. `nestjs`)                            | Conventions demandées, ou liste des sujets                                      | Appliquer les conventions de l'équipe        |
-| `search_docs`         | `query: string`, `limit?: number` (défaut 5, max 20)       | Extraits pertinents avec fichier source                                         | Recherche plein texte dans tout le contexte  |
-| `check_code`          | `code: string`, `language: "ts" \| "js" \| "tsx" \| "jsx"` | Liste des violations (règle, sévérité, ligne, explication, correction suggérée) | Vérifier un extrait contre les garde-fous    |
+| Tool                  | Entrée                                                              | Sortie                                                                          | Rôle                                         |
+| --------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------- |
+| `get_project_context` | —                                                                   | Contenu de `project.md`                                                         | Donner à l'agent la vue d'ensemble du projet |
+| `list_features`       | —                                                                   | Liste des features (nom, titre, tags)                                           | Découvrir ce qui est documenté               |
+| `get_feature_doc`     | `name: string`                                                      | Doc complète d'une feature                                                      | Comprendre une feature avant de la modifier  |
+| `get_conventions`     | `topic?: string` (ex. `nestjs`)                                     | Conventions demandées, ou liste des sujets                                      | Appliquer les conventions de l'équipe        |
+| `search_docs`         | `query: string`, `limit?: number` (défaut 5, max 20)                | Extraits pertinents avec fichier source                                         | Recherche plein texte dans tout le contexte  |
+| `check_code`          | `code: string`, `language: "ts" \| "js" \| "tsx" \| "jsx" \| "php"` | Liste des violations (règle, sévérité, ligne, explication, correction suggérée) | Vérifier un extrait contre les garde-fous    |
 
 Exigences pour **chaque tool** :
 

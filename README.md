@@ -92,14 +92,14 @@ flowchart LR
 
 Every tool is read-only (`readOnlyHint: true`, `openWorldHint: false`).
 
-| Tool                  | Input                                                                | Returns                                                                                                                |
-| --------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `get_project_context` | —                                                                    | The project overview (`project.md`): domain, architecture, stack                                                       |
-| `list_features`       | —                                                                    | The documented features: name, title, tags, last update (structured)                                                   |
-| `get_feature_doc`     | `name`                                                               | The whole documentation of a feature: goal, flows, endpoints, points of attention                                      |
-| `get_conventions`     | `topic` (optional, e.g. `nestjs`)                                    | The conventions of a topic, or the list of topics                                                                      |
-| `search_docs`         | `query`, `limit` (1–20, default 5)                                   | The most relevant sections across the whole context, with their source and how to read the whole document (structured) |
-| `check_code`          | `code` (up to 50,000 characters), `language` (`ts` `js` `tsx` `jsx`) | Every violation of `security/rules.json`: rule, severity, line, column, message, fix (structured)                      |
+| Tool                  | Input                                                                      | Returns                                                                                                                |
+| --------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `get_project_context` | —                                                                          | The project overview (`project.md`): domain, architecture, stack                                                       |
+| `list_features`       | —                                                                          | The documented features: name, title, tags, last update (structured)                                                   |
+| `get_feature_doc`     | `name`                                                                     | The whole documentation of a feature: goal, flows, endpoints, points of attention                                      |
+| `get_conventions`     | `topic` (optional, e.g. `nestjs`)                                          | The conventions of a topic, or the list of topics                                                                      |
+| `search_docs`         | `query`, `limit` (1–20, default 5)                                         | The most relevant sections across the whole context, with their source and how to read the whole document (structured) |
+| `check_code`          | `code` (up to 50,000 characters), `language` (`ts` `js` `tsx` `jsx` `php`) | Every violation of `security/rules.json`: rule, severity, line, column, message, fix (structured)                      |
 
 The server also sends **instructions** at initialization, which tell the agent when to call each tool: before writing code, before changing a feature, before proposing code. Clients such as Claude Code only show the agent the tool names and these instructions until it looks a tool up.
 
@@ -256,11 +256,19 @@ Each rule of `security/rules.json` is a regular expression applied to the code a
     "message": "XSS risk",
     "fix": "Sanitize the HTML (DOMPurify) or avoid this API",
     "languages": ["tsx", "jsx"]
+  },
+  {
+    "id": "no-unescaped-blade",
+    "severity": "error",
+    "pattern": "\\{!!",
+    "message": "Unescaped Blade output: XSS risk",
+    "fix": "Use {{ }}, or sanitize the HTML first",
+    "languages": ["php"]
   }
 ]
 ```
 
-`id`, `severity` (`error` or `warning`), `pattern`, `message` and `fix` are required; `flags` (among `i`, `m`, `s`, `u`) and `languages` are optional. The file is validated at startup, where an invalid rule stops the server with a message that names it, then read again on every call, so an edited rule applies without a restart.
+`id`, `severity` (`error` or `warning`), `pattern`, `message` and `fix` are required; `flags` (among `i`, `m`, `s`, `u`) and `languages` are optional. `languages` restricts a rule to some of `ts`, `js`, `tsx`, `jsx` and `php` (which covers Blade templates); without it, the rule applies to every language. The file is validated at startup, where an invalid rule stops the server with a message that names it, then read again on every call, so an edited rule applies without a restart.
 
 [`examples/taskflow-context`](examples/taskflow-context) is a complete example. What the tests in real clients taught about writing for agents:
 
