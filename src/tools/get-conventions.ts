@@ -2,8 +2,16 @@ import type { CallToolResult, McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
 
 import { ContextNotFoundError, PathTraversalError } from '../context/errors.js';
-import type { ProjectContext } from '../context/project-context.js';
-import { countOf, formatDocument, formatNotFound, formatSkipped, joinSections } from './format.js';
+import type { NamedDocument, ProjectContext } from '../context/project-context.js';
+import {
+  countOf,
+  formatDocument,
+  formatLargeDocuments,
+  formatNotFound,
+  formatSkipped,
+  isLargeDocument,
+  joinSections,
+} from './format.js';
 import {
   errorResult,
   MAX_NAME_LENGTH,
@@ -64,12 +72,24 @@ async function listConventionTopics(context: ProjectContext): Promise<CallToolRe
       ? 'No coding convention is documented yet: the context folder has no Markdown file under conventions/.'
       : [
           `${countOf(entries.length, 'convention topic')}:`,
-          ...entries.map(({ name, document }) => `- ${name}: ${document.title}`),
+          ...entries.map(formatTopicLine),
           '',
           'Call get_conventions with one of these topics to read it.',
         ].join('\n');
+  const note = formatLargeDocuments(
+    entries
+      .filter(({ document }) => isLargeDocument(document.content.length))
+      .map(({ name }) => name),
+    'for instance one per topic under conventions/',
+  );
 
-  return textResult(joinSections(list, formatSkipped(skipped)));
+  return textResult(joinSections(list, note, formatSkipped(skipped)));
+}
+
+function formatTopicLine({ name, document }: NamedDocument): string {
+  const characters = document.content.length;
+  const size = isLargeDocument(characters) ? ` (large: ${String(characters)} characters)` : '';
+  return `- ${name}: ${document.title}${size}`;
 }
 
 export function registerGetConventionsTool(
@@ -83,8 +103,8 @@ export function registerGetConventionsTool(
       description:
         "Returns the team's coding conventions for one topic (e.g. typescript, nestjs, react): " +
         'structure, naming, rules, and examples of good and bad code. Without a topic, lists the ' +
-        'available topics. Read the relevant conventions before writing code for this project, ' +
-        'and follow them.',
+        'available topics and flags the large ones, to search with search_docs first. Read the ' +
+        'relevant conventions before writing code for this project, and follow them.',
       inputSchema,
       annotations: READ_ONLY_ANNOTATIONS,
     },
