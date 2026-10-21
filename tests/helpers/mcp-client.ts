@@ -109,11 +109,16 @@ export interface TestServer {
 
 /**
  * Starts a server reading `contextDir` and returns a client that has completed initialization.
- * The server logs go to `logs` when given, else nowhere.
+ * The server logs go to `logs` when given, else nowhere. check_code reads its paths from
+ * `projectDir`, the working directory by default.
  */
-export async function startTestServer(contextDir: string, logs?: string[]): Promise<TestServer> {
+export async function startTestServer(
+  contextDir: string,
+  logs?: string[],
+  projectDir: string = process.cwd(),
+): Promise<TestServer> {
   const server = await createServer({
-    config: { contextDir, projectDir: process.cwd(), logLevel: 'debug' },
+    config: { contextDir, projectDir, logLevel: 'debug' },
     logger: logs
       ? createLogger('debug', (line) => logs.push(line))
       : createLogger('error', () => undefined),

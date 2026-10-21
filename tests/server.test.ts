@@ -108,17 +108,24 @@ describe('createServer', () => {
     });
     expect(inputOf('check_code')).toMatchObject({
       properties: {
+        paths: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 50,
+          items: { type: 'string', minLength: 1, maxLength: 512 },
+        },
         code: { type: 'string', minLength: 1, maxLength: 50_000 },
         language: { enum: ['ts', 'js', 'tsx', 'jsx', 'php'] },
       },
-      required: ['code', 'language'],
     });
+    // Either paths, or code with its language: the tool says which is missing.
+    expect(inputOf('check_code')).not.toHaveProperty('required');
   });
 
   it.each([
     ['list_features', ['features', 'skipped']],
     ['search_docs', ['query', 'terms', 'results', 'skipped']],
-    ['check_code', ['language', 'rulesChecked', 'errors', 'warnings', 'violations', 'note']],
+    ['check_code', ['errors', 'warnings', 'note']],
   ])('advertises the output schema of %s', async (name, required) => {
     const tools = await test.client.listTools();
 

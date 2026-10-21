@@ -46,7 +46,7 @@ export async function createServer({ config, logger }: ServerDependencies): Prom
   registerGetFeatureDocTool(server, dependencies);
   registerGetConventionsTool(server, dependencies);
   registerSearchDocsTool(server, dependencies);
-  registerCheckCodeTool(server, dependencies);
+  registerCheckCodeTool(server, { ...dependencies, projectDir: config.projectDir });
 
   registerContextDocumentResources(server, dependencies);
 
