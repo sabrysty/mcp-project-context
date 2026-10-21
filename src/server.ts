@@ -19,7 +19,7 @@ import { registerListFeaturesTool } from './tools/list-features.js';
 import { registerSearchDocsTool } from './tools/search-docs.js';
 
 export const SERVER_NAME = 'mcp-project-context';
-export const SERVER_VERSION = '1.3.0';
+export const SERVER_VERSION = '1.4.0';
 
 export interface ServerDependencies {
   config: Config;
