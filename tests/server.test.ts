@@ -49,6 +49,8 @@ describe('createServer', () => {
     ]) {
       expect(SERVER_INSTRUCTIONS).toContain(name);
     }
+    // Agents copied every file into check_code, one call per file, before paths existed.
+    expect(SERVER_INSTRUCTIONS).toContain('check_code with the paths of the files');
   });
 
   it('declares tools, resources, prompts and completions', () => {
@@ -108,17 +110,24 @@ describe('createServer', () => {
     });
     expect(inputOf('check_code')).toMatchObject({
       properties: {
+        paths: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 50,
+          items: { type: 'string', minLength: 1, maxLength: 512 },
+        },
         code: { type: 'string', minLength: 1, maxLength: 50_000 },
         language: { enum: ['ts', 'js', 'tsx', 'jsx', 'php'] },
       },
-      required: ['code', 'language'],
     });
+    // Either paths, or code with its language: the tool says which is missing.
+    expect(inputOf('check_code')).not.toHaveProperty('required');
   });
 
   it.each([
     ['list_features', ['features', 'skipped']],
     ['search_docs', ['query', 'terms', 'results', 'skipped']],
-    ['check_code', ['language', 'rulesChecked', 'errors', 'warnings', 'violations', 'note']],
+    ['check_code', ['errors', 'warnings', 'note']],
   ])('advertises the output schema of %s', async (name, required) => {
     const tools = await test.client.listTools();
 
@@ -132,7 +141,7 @@ describe('createServer', () => {
 describe('createServer at startup', () => {
   function start(contextDir: string, logs: string[] = []) {
     return createServer({
-      config: { contextDir, logLevel: 'warn' },
+      config: { contextDir, projectDir: process.cwd(), logLevel: 'warn' },
       logger: createLogger('warn', (line) => logs.push(line)),
     });
   }
