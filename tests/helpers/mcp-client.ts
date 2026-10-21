@@ -113,7 +113,7 @@ export interface TestServer {
  */
 export async function startTestServer(contextDir: string, logs?: string[]): Promise<TestServer> {
   const server = await createServer({
-    config: { contextDir, logLevel: 'debug' },
+    config: { contextDir, projectDir: process.cwd(), logLevel: 'debug' },
     logger: logs
       ? createLogger('debug', (line) => logs.push(line))
       : createLogger('error', () => undefined),

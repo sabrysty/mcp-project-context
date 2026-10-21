@@ -75,6 +75,19 @@ describe('loadConfig', () => {
     });
   });
 
+  it('keeps the project folder: the one given by Claude Code, else the working folder', () => {
+    expect(loadConfig([], { CLAUDE_PROJECT_DIR: projectDir }, otherDir).projectDir).toBe(
+      resolve(projectDir),
+    );
+    expect(loadConfig([], { CLAUDE_PROJECT_DIR: '  ' }, otherDir).projectDir).toBe(
+      resolve(otherDir),
+    );
+    // Even when the context folder is given and lies outside the project.
+    expect(
+      loadConfig(['--context-dir', contextDir], { CLAUDE_PROJECT_DIR: projectDir }).projectDir,
+    ).toBe(resolve(projectDir));
+  });
+
   it('resolves a relative folder in the project folder, from the CLI or the environment', () => {
     expect(
       loadConfig(['--context-dir', 'docs/context'], { CLAUDE_PROJECT_DIR: projectDir }, otherDir)

@@ -132,7 +132,7 @@ describe('createServer', () => {
 describe('createServer at startup', () => {
   function start(contextDir: string, logs: string[] = []) {
     return createServer({
-      config: { contextDir, logLevel: 'warn' },
+      config: { contextDir, projectDir: process.cwd(), logLevel: 'warn' },
       logger: createLogger('warn', (line) => logs.push(line)),
     });
   }

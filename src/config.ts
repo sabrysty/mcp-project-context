@@ -10,6 +10,8 @@ export class ConfigError extends Error {
 export interface Config {
   /** Absolute path of the context folder. */
   contextDir: string;
+  /** Absolute path of the project folder: check_code reads the files it is given from there. */
+  projectDir: string;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
 }
 
@@ -47,13 +49,14 @@ export function loadConfig(
   }
 
   const given = parsed.data.contextDir;
+  const projectDir = projectFolder(env, cwd);
   // An absolute path is kept as it is; a relative one starts from the project folder.
-  const contextDir = resolve(projectFolder(env, cwd), given ?? DEFAULT_CONTEXT_DIR);
+  const contextDir = resolve(projectDir, given ?? DEFAULT_CONTEXT_DIR);
   // A folder given explicitly must exist: a typo stops the server. The default one may not
   // exist yet, in a project that is not documented: the tools then report it.
   if (given !== undefined) assertIsDirectory(contextDir);
 
-  return { contextDir, logLevel: parsed.data.logLevel };
+  return { contextDir, projectDir, logLevel: parsed.data.logLevel };
 }
 
 /**
@@ -63,7 +66,7 @@ export function loadConfig(
  */
 function projectFolder(env: NodeJS.ProcessEnv, cwd: string): string {
   const projectDir = env.CLAUDE_PROJECT_DIR?.trim();
-  return projectDir ? resolve(cwd, projectDir) : cwd;
+  return projectDir ? resolve(cwd, projectDir) : resolve(cwd);
 }
 
 function parseCliArgs(argv: readonly string[]) {
