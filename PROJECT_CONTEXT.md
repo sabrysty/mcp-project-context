@@ -135,14 +135,14 @@ updated: 2026-10-01
 
 ### 5.2 Tools
 
-| Tool                  | Entrée                                                              | Sortie                                                                          | Rôle                                         |
-| --------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------- |
-| `get_project_context` | —                                                                   | Contenu de `project.md`                                                         | Donner à l'agent la vue d'ensemble du projet |
-| `list_features`       | —                                                                   | Liste des features (nom, titre, tags, taille ; les grosses sont signalées)      | Découvrir ce qui est documenté               |
-| `get_feature_doc`     | `name: string`                                                      | Doc complète d'une feature                                                      | Comprendre une feature avant de la modifier  |
-| `get_conventions`     | `topic?: string` (ex. `nestjs`)                                     | Conventions demandées, ou liste des sujets                                      | Appliquer les conventions de l'équipe        |
-| `search_docs`         | `query: string`, `limit?: number` (défaut 5, max 20)                | Extraits pertinents avec fichier source                                         | Recherche plein texte dans tout le contexte  |
-| `check_code`          | `code: string`, `language: "ts" \| "js" \| "tsx" \| "jsx" \| "php"` | Liste des violations (règle, sévérité, ligne, explication, correction suggérée) | Vérifier un extrait contre les garde-fous    |
+| Tool                  | Entrée                                                                                                                          | Sortie                                                                                                    | Rôle                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `get_project_context` | —                                                                                                                               | Contenu de `project.md`                                                                                   | Donner à l'agent la vue d'ensemble du projet              |
+| `list_features`       | —                                                                                                                               | Liste des features (nom, titre, tags, taille ; les grosses sont signalées)                                | Découvrir ce qui est documenté                            |
+| `get_feature_doc`     | `name: string`                                                                                                                  | Doc complète d'une feature                                                                                | Comprendre une feature avant de la modifier               |
+| `get_conventions`     | `topic?: string` (ex. `nestjs`)                                                                                                 | Conventions demandées, ou liste des sujets                                                                | Appliquer les conventions de l'équipe                     |
+| `search_docs`         | `query: string`, `limit?: number` (défaut 5, max 20)                                                                            | Extraits pertinents avec fichier source                                                                   | Recherche plein texte dans tout le contexte               |
+| `check_code`          | `paths?: string[]` (fichiers du projet, 50 au plus), ou `code: string` avec `language: "ts" \| "js" \| "tsx" \| "jsx" \| "php"` | Liste des violations (règle, sévérité, ligne, explication, correction suggérée), par fichier avec `paths` | Vérifier des fichiers ou un extrait contre les garde-fous |
 
 Exigences pour **chaque tool** :
 
@@ -198,6 +198,8 @@ Les règles sont définies dans `security/rules.json` (le code ne doit **pas** l
 ```
 
 V1 : moteur de règles basé sur des **regex**, avec le numéro de ligne de chaque violation. Rendre explicite dans le README que c'est un premier niveau de garde-fou, qui ne remplace pas un linter ou un SAST. Piste V2 : analyse AST.
+
+v1.4.0 : `check_code` accepte aussi `paths`, les fichiers à vérifier, relatifs au dossier du projet (`CLAUDE_PROJECT_DIR`, sinon le dossier de travail du serveur). Le serveur les lit lui-même : un agent vérifie tous les fichiers qu'il a écrits en un seul appel, sans recopier leur code, ce qui lui coûtait des tokens de sortie et un contexte plus lourd. Le langage vient de l'extension (`.ts` `.mts` `.cts` `.tsx` `.js` `.mjs` `.cjs` `.jsx` `.php`) ; tout autre fichier est refusé, `.env` compris. Le chemin doit rester dans le dossier du projet, liens symboliques compris, et un fichier qu'on ne peut pas vérifier est signalé avec sa raison sans empêcher la vérification des autres. `code` avec `language` reste accepté, pour un extrait qui n'est pas encore dans un fichier.
 
 **Sécurité du moteur :** valider `rules.json` au démarrage avec Zod. Si une regex est invalide, le serveur refuse de démarrer avec un message clair. Limiter la taille du `code` reçu (ex. 50 000 caractères) pour éviter les abus.
 
