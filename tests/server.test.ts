@@ -49,6 +49,8 @@ describe('createServer', () => {
     ]) {
       expect(SERVER_INSTRUCTIONS).toContain(name);
     }
+    // Agents copied every file into check_code, one call per file, before paths existed.
+    expect(SERVER_INSTRUCTIONS).toContain('check_code with the paths of the files');
   });
 
   it('declares tools, resources, prompts and completions', () => {

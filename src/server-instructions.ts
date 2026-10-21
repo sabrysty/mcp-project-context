@@ -20,8 +20,9 @@ export const SERVER_INSTRUCTIONS = [
     'for each topic the change touches.',
   `- Before changing a feature: ${LIST_FEATURES_TOOL}, then ${GET_FEATURE_DOC_TOOL}.`,
   `- To find where a topic is documented: ${SEARCH_DOCS_TOOL}.`,
-  `- Before proposing code: ${CHECK_CODE_TOOL}, then fix every error it reports. A clean ` +
-    'result does not prove that the code is secure.',
+  `- Before proposing code: ${CHECK_CODE_TOOL} with the paths of the files you wrote or ` +
+    'changed, all in one call (no need to copy their code), then fix every error it reports. ' +
+    'A clean result does not prove that the code is secure.',
   'Every tool is read-only. The documents are also resources (context://<path without .md>), ' +
     `and two prompts help people: ${REVIEW_WITH_CONVENTIONS_PROMPT} and ${EXPLAIN_FEATURE_PROMPT}.`,
 ].join('\n');
